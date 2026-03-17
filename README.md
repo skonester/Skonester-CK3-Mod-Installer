@@ -6,7 +6,7 @@ Manual Install Option
 
 Next free slot mod1/, mod2/, etc.	
 
-Works with ANY ZIP (Nexus, Paradox, local)	
+Works with files downloaded from (Nexus, Paradox, etc.)
 
 Portable EXE - no install needed	
 
@@ -18,3 +18,4 @@ Built with
 *Electron v.40
 * Yazul-promise
 * Node.js v20+
+
