@@ -45,6 +45,49 @@ body {
     align-items: center;
     padding: 20px;
     overflow-x: hidden;
+    -webkit-app-region: no-drag; /* FIX: Allows global drag-and-drop */
+}
+
+/* 🎯 DRAG AND DROP OVERLAY */
+#drop-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(20, 20, 25, 0.85);
+    backdrop-filter: blur(12px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#drop-overlay .drop-box {
+    border: 3px dashed var(--accent);
+    border-radius: 24px;
+    padding: 60px;
+    text-align: center;
+    background: rgba(255, 107, 107, 0.05);
+    transform: scale(0.95);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body.drag-active #drop-overlay {
+    opacity: 1;
+    pointer-events: all; /* FIX: Forces overlay to catch dropped file */
+}
+
+body.drag-active #drop-overlay .drop-box {
+    transform: scale(1);
+    box-shadow: 0 0 50px rgba(255, 107, 107, 0.2);
+}
+
+.drop-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--accent);
+    margin-bottom: 10px;
 }
 
 /* Titlebar - Chromium frameless */
@@ -396,6 +439,14 @@ body {
 </style>
 </head>
 <body>
+
+<div id="drop-overlay">
+    <div class="drop-box">
+        <div class="drop-title">📦 Drop ZIP Here</div>
+        <div style="color: #e8e8f0; font-size: 1.2rem;">Release to load mod</div>
+    </div>
+</div>
+
 <div class="header titlebar-drag">
     <div class="titlebar-nodrag" style="position: absolute; top: 12px; right: 16px; display: flex; gap: 8px; z-index: 10;">
         <button onclick="app.minimize()" style="
@@ -448,7 +499,7 @@ body {
     <div class="section">
         <h3 class="section-title">📦 1. Select Mod ZIP</h3>
         <button id="zipBtn" class="btn">📥 Choose ZIP File</button>
-        <div id="zipInfo" class="info"></div>
+        <div id="zipInfo" class="info">Or simply drag & drop the ZIP anywhere!</div>
     </div>
 
     <div class="section">
@@ -475,7 +526,7 @@ name="My Mod"<br>
 path="mod/[Mod]"<br>
 remote_file_id="0"<br>
 version="1.18.4"<br>
-tags={ "1.18 "Crane" }
+tags={ "1.18 \"Crane\"" }
         </code>
     </div>
 
@@ -543,22 +594,96 @@ function updateModData() {
         `path="mod/[ZIP_FOLDER_NAME]"<br>` +
         `remote_file_id="${modData.modId}"<br>` +
         `version="${modData.version}"<br>` +
-        `tags={ "1.18 \\\"Crane\\"" }`;
+        `tags={ "1.18 \\"Crane\\"" }`;
     
     checkReady();
 }
 
-// ZIP SELECTION
-document.getElementById('zipBtn').onclick = async () => {
-    try {
-        zipFile = await window.app.pickZip();
+// 🎯 GLOBAL DRAG AND DROP LOGIC
+let dragCounter = 0;
+
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    window.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+    }, false);
+});
+
+window.addEventListener('dragenter', (e) => {
+    dragCounter++;
+    document.body.classList.add('drag-active');
+});
+
+window.addEventListener('dragleave', (e) => {
+    dragCounter--;
+    if (dragCounter <= 0) {
+        dragCounter = 0;
+        document.body.classList.remove('drag-active');
+    }
+});
+
+// Handle the actual drop (With Hybrid Auto-Detect)
+window.addEventListener('drop', async (e) => {
+    dragCounter = 0;
+    document.body.classList.remove('drag-active');
+    
+    const file = e.dataTransfer.files[0];
+    
+    if (file && (file.name.toLowerCase().endsWith('.zip') || file.name.toLowerCase().endsWith('.7z') || file.name.toLowerCase().endsWith('.rar'))) {
+        zipFile = file.path;
+        
         const info = document.getElementById('zipInfo');
-        if (zipFile) {
-            info.innerHTML = `✅ <strong>${zipFile.split(/[\\/]/).pop()}</strong> loaded`;
-            info.style.color = '#c8e6c8';
+        info.innerHTML = `✅ <strong>${file.name}</strong> loaded via Drag & Drop`;
+        info.style.color = '#c8e6c8';
+        
+        // Auto-fill mod name if it still says "Any" or is blank
+        const modNameInput = document.getElementById('modName');
+        if(modNameInput.value === 'Any' || modNameInput.value === '') {
+            modNameInput.value = file.name.replace(/\.(zip|7z|rar)$/i, '');
+            updateModData();
         }
+        
+        // 🌟 HYBRID LOGIC: Auto-detect folder on drop if missing
+        if (!folderPath) {
+            const status = document.getElementById('status');
+            status.innerHTML = '<span class="status-icon">🔍</span> Auto-detecting CK3 folder...';
+            
+            try {
+                const detectedPath = await window.app.autoDetectCK3ModsFolder();
+                if (detectedPath) {
+                    folderPath = detectedPath;
+                    
+                    document.getElementById('folderPathDisplay').textContent = folderPath;
+                    document.getElementById('folderPathDisplay').style.display = 'block';
+                    document.getElementById('folderInfo').innerHTML = `✅ <strong>Auto-detected:</strong> ${folderPath.split(/[\\/]/).pop()}`;
+                    document.getElementById('folderInfo').style.color = '#c8e6c8';
+                }
+            } catch(err) {
+                console.log("Silent auto-detect failed. User must select manually.");
+            }
+        }
+        
         updateStatus();
         checkReady();
+    } else {
+        const info = document.getElementById('zipInfo');
+        info.innerHTML = `❌ <strong>Please drop a valid ZIP, RAR, or 7Z file.</strong>`;
+        info.style.color = '#ffb3b3';
+    }
+});
+
+// ZIP SELECTION (Manual)
+document.getElementById('zipBtn').onclick = async () => {
+    try {
+        const selectedPath = await window.app.pickZip();
+        if (selectedPath) {
+            zipFile = selectedPath;
+            const info = document.getElementById('zipInfo');
+            info.innerHTML = `✅ <strong>${zipFile.split(/[\\/]/).pop()}</strong> loaded`;
+            info.style.color = '#c8e6c8';
+            updateStatus();
+            checkReady();
+        }
     } catch(e) {
         document.getElementById('zipInfo').innerHTML = `❌ <strong>${e.message}</strong>`;
         document.getElementById('zipInfo').style.color = '#ffb3b3';
@@ -593,8 +718,9 @@ document.getElementById('autoDetectBtn').onclick = async () => {
 // MANUAL FOLDER
 document.getElementById('folderBtn').onclick = async () => {
     try {
-        folderPath = await window.app.pickFolder();
-        if (folderPath) {
+        const selectedPath = await window.app.pickFolder();
+        if (selectedPath) {
+            folderPath = selectedPath;
             document.getElementById('folderPathDisplay').textContent = folderPath;
             document.getElementById('folderPathDisplay').style.display = 'block';
             document.getElementById('folderInfo').innerHTML = `✅ <strong>${folderPath.split(/[\\/]/).pop()}</strong>`;
@@ -616,7 +742,6 @@ document.getElementById('installBtn').onclick = async () => {
     status.innerHTML = '<span class="status-icon">🚀</span> Installing mod... Please wait';
     document.getElementById('installBtn').disabled = true;
     
-    // Show the progress bar when installation starts
     progressContainer.style.display = 'block';
     
     try {
@@ -631,8 +756,6 @@ document.getElementById('installBtn').onclick = async () => {
         if (result.success) {
             status.innerHTML = `<span class="status-icon">✅</span> <strong>${result.message}</strong>`;
             status.className = 'status success';
-            // Optional: Hide progress bar on success
-            // setTimeout(() => progressContainer.style.display = 'none', 2000);
         } else {
             throw new Error(result.error || 'Installation failed');
         }
@@ -668,9 +791,8 @@ function updateStatus() {
 
 // Init
 updateModData();
-</script>
 
-<script>
+// Listen for progress updates from main.js
 window.app.onProgressUpdate((data) => {
   document.getElementById('progressFill').style.width = `${data.percent}%`;
   document.getElementById('progressPercent').textContent = `${data.percent}%`;

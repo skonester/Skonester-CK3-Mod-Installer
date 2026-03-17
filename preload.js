@@ -1,47 +1,32 @@
-const {contextBridge, ipcRenderer, systemPreferences} = require('electron');
+const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('app', {
-  pickZip: function() { return ipcRenderer.invoke('pick-zip'); },
-  pickFolder: function() { return ipcRenderer.invoke('pick-folder'); },
-  install: function(data) { return ipcRenderer.invoke('install', data); },
-  autoDetectCK3ModsFolder: function() { return ipcRenderer.invoke('auto-detect-ck3-mods-folder'); },
+  // 📁 File System & Dialogs
+  pickZip: () => ipcRenderer.invoke('pick-zip'),
+  pickFolder: () => ipcRenderer.invoke('pick-folder'),
+  autoDetectCK3ModsFolder: () => ipcRenderer.invoke('auto-detect-ck3-mods-folder'),
   
-  // 🎯 ADDED: Real-time progress bridge
-  onProgressUpdate: function(callback) { 
-    return ipcRenderer.on('progress-update', (event, data) => callback(data)); 
-  },
+  // 🚀 Installation
+  install: (data) => ipcRenderer.invoke('install', data),
   
-  // 🌟 Electron 40 FANCY FEATURES
-  getSystemAccent: function() { 
-    return new Promise((resolve) => {
-      // Safety check: systemPreferences is technically main-process only.
-      // If it fails, fallback to your default --accent color.
-      try {
-        const accent = systemPreferences.getAccentColor();
-        resolve(accent);
-      } catch (e) {
-        resolve('#ff6b6b'); 
-      }
-    });
+  // 📡 Real-time Updates (Main -> Renderer)
+  onInstallStatus: (callback) => {
+    // Used for "Analyzing ZIP..." or "Ready" phases
+    ipcRenderer.on('install-status', (event, data) => callback(data));
   },
-  minimize: function() { return ipcRenderer.invoke('window-minimize'); },
-  maximize: function() { return ipcRenderer.invoke('window-maximize'); },
-  close: function() { return ipcRenderer.invoke('window-close'); }
-});
+  onProgressUpdate: (callback) => {
+    // Used for the actual MB/s and extraction percentages
+    ipcRenderer.on('progress-update', (event, data) => callback(data));
+  },
 
-// 🌟 Listen for system accent changes (live sync)
-try {
-  if (systemPreferences && systemPreferences.on) {
-    systemPreferences.on('accent-color-changed', (event, color) => {
-      // Note: DOM manipulation in preload might need to wait for DOMContentLoaded, 
-      // but if this fires after load, it works perfectly.
-      const root = document.documentElement;
-      if (root) {
-        root.style.setProperty('--accent', color);
-        root.style.setProperty('--system-accent', color.replace(/rgb?\(/, 'rgba(').replace(')', ',0.2)') || `${color}20`);
-      }
-    });
-  }
-} catch (e) {
-  console.log("System preferences sync unavailable in this context.");
-}
+  // 🎨 System Accent Color (Requested securely from Main)
+  getSystemAccent: () => ipcRenderer.invoke('get-system-accent'),
+  onAccentChange: (callback) => {
+    ipcRenderer.on('accent-color-changed', (event, color) => callback(color));
+  },
+
+  // 🪟 Window Controls
+  minimize: () => ipcRenderer.invoke('window-minimize'),
+  maximize: () => ipcRenderer.invoke('window-maximize'),
+  close: () => ipcRenderer.invoke('window-close')
+});

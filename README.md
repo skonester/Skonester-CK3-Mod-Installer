@@ -6,7 +6,7 @@ Manual Install Option
 
 Next free slot mod1/, mod2/, etc.	
 
-Works with ANY ZIP (Nexus, GitHub, local)	
+Works with ANY ZIP (Nexus, Paradox, local)	
 
 Portable EXE - no install needed	
 
@@ -16,5 +16,5 @@ CK3 1.18.4 "Crane" compatible
 Built with
  
 *Electron v.40
-* JSZip v3.10.1 
+* Yazul-promise
 * Node.js v20+

@@ -1,9 +1,10 @@
-const {app, BrowserWindow, ipcMain, systemPreferences} = require('electron');
-const {dialog} = require('electron');
-const fs = require('fs').promises;
+const { app, BrowserWindow, ipcMain, systemPreferences, dialog } = require('electron');
+const fs = require('fs');
+const fsPromises = require('fs').promises;
 const path = require('path');
 const os = require('os');
-const AdmZip = require('adm-zip');
+const yauzl = require('yauzl-promise');
+const { pipeline } = require('stream/promises');
 
 let mainWin;
 
@@ -42,6 +43,26 @@ ipcMain.handle('window-maximize', () => {
 });
 ipcMain.handle('window-close', () => mainWin.close());
 
+// 🎨 SECURE ACCENT COLOR HANDLERS (Added for Preload compatibility)
+ipcMain.handle('get-system-accent', () => {
+  if (process.platform === 'win32' || process.platform === 'darwin') {
+    try {
+      return systemPreferences.getAccentColor();
+    } catch (e) {
+      return null;
+    }
+  }
+  return null;
+});
+
+if (process.platform === 'win32' || process.platform === 'darwin') {
+  systemPreferences.on('accent-color-changed', (event, newColor) => {
+    if (mainWin && !mainWin.isDestroyed()) {
+      mainWin.webContents.send('accent-color-changed', newColor);
+    }
+  });
+}
+
 ipcMain.handle('pick-zip', async function() {
   var result = await dialog.showOpenDialog({
     properties: ['openFile'],
@@ -62,7 +83,7 @@ ipcMain.handle('auto-detect-ck3-mods-folder', async function() {
     const documentsPath = path.join(os.homedir(), 'Documents');
     const standardPath = path.join(documentsPath, 'Paradox Interactive', 'Crusader Kings III', 'mod');
     
-    if (await fs.access(standardPath).then(() => true).catch(() => false)) {
+    if (await fsPromises.access(standardPath).then(() => true).catch(() => false)) {
       return standardPath;
     }
     
@@ -73,7 +94,7 @@ ipcMain.handle('auto-detect-ck3-mods-folder', async function() {
     ];
     
     for (const altPath of alternatePaths) {
-      if (await fs.access(altPath).then(() => true).catch(() => false)) {
+      if (await fsPromises.access(altPath).then(() => true).catch(() => false)) {
         return altPath;
       }
     }
@@ -85,31 +106,34 @@ ipcMain.handle('auto-detect-ck3-mods-folder', async function() {
   }
 });
 
-// 🎯 ADM-ZIP + REAL-TIME PROGRESS BAR
+// 🎯 YAUZL-PROMISE + REAL-TIME STREAMING PROGRESS
 ipcMain.handle('install', async function(event, data) {
+  let zip;
   try {
     console.log('🚀 Install started:', data.zipPath);
-    
-    // Send "installing" status
     mainWin.webContents.send('install-status', { status: 'detecting', message: 'Analyzing ZIP...' });
+
+    // 1. Open ZIP using yauzl
+    zip = await yauzl.open(data.zipPath, { supportMacArchive: true });
     
-    const zip = new AdmZip(data.zipPath);
-    const zipEntries = zip.getEntries();
-    const leafFiles = zipEntries.filter(entry => !entry.isDirectory);
+    // Get all entries for metadata and filtering
+    const entries = await zip.readEntries();
+    const leafFiles = entries.filter(e => !e.filename.endsWith('/'));
     const totalFiles = leafFiles.length;
-    const totalSize = zipEntries.reduce((sum, e) => sum + e.header.uncompressedSize, 0);
-    
-    console.log(`ZIP: ${totalFiles} files, ${Math.round(totalSize/1024/1024)}MB`);
+    const totalSize = leafFiles.reduce((sum, e) => sum + Number(e.uncompressedSize), 0);
+    const totalSizeMB = Math.round(totalSize / 1024 / 1024);
+
+    console.log(`ZIP: ${totalFiles} files, ${totalSizeMB}MB`);
     mainWin.webContents.send('install-status', { 
       status: 'ready', 
       totalFiles, 
-      totalSize: Math.round(totalSize/1024/1024),
-      message: `Ready: ${totalFiles} files, ${Math.round(totalSize/1024/1024)}MB` 
+      totalSize: totalSizeMB,
+      message: `Ready: ${totalFiles} files, ${totalSizeMB}MB` 
     });
 
-    // 🔧 ZIP root detection
+    // 🔧 ZIP root detection (Phase 1)
     let rootFolderName = null;
-    const firstFolders = [...new Set(leafFiles.map(e => e.entryName.split('/')[0].trim()).filter(Boolean))];
+    const firstFolders = [...new Set(leafFiles.map(e => e.filename.split('/')[0].trim()).filter(Boolean))];
     console.log('First folders:', firstFolders);
     
     if (firstFolders.length === 1 && firstFolders[0]) {
@@ -124,7 +148,7 @@ ipcMain.handle('install', async function(event, data) {
       const targetDir = path.join(data.folderPath, rootFolderName);
       console.log('Phase 1 checking:', targetDir);
       try {
-        const stat = await fs.stat(targetDir);
+        const stat = await fsPromises.stat(targetDir);
         if (stat.isDirectory()) {
           console.log('❌ Root exists, fallback modN');
         } else {
@@ -145,7 +169,7 @@ ipcMain.handle('install', async function(event, data) {
         modFolderName = `mod${modNumber}`;
         const targetDir = path.join(data.folderPath, modFolderName);
         try {
-          const stat = await fs.stat(targetDir);
+          const stat = await fsPromises.stat(targetDir);
           if (stat.isDirectory()) {
             modNumber++;
             continue;
@@ -176,27 +200,18 @@ ipcMain.handle('install', async function(event, data) {
     const modVersion = data.version || '1.18.4';
     const remoteFileId = data.modId ?? '0';
     
-    const externalModContent = `name="${modName}"
-path="mod/${modFolderName}"
-remote_file_id="${remoteFileId}"
-version="${modVersion}"
-tags={ "1.18 \"Crane\"" }`;
-    
-    await fs.writeFile(path.join(data.folderPath, modFilename), externalModContent);
+    const externalModContent = `name="${modName}"\npath="mod/${modFolderName}"\nremote_file_id="${remoteFileId}"\nversion="${modVersion}"\ntags={ "1.18 \\"Crane\\"" }`;
+    await fsPromises.writeFile(path.join(data.folderPath, modFilename), externalModContent);
 
     const targetDir = path.join(data.folderPath, modFolderName);
-    await fs.mkdir(targetDir, {recursive: true});
+    await fsPromises.mkdir(targetDir, {recursive: true});
     
-    const descriptorContent = `name="${modName}"
-version="${modVersion}"
-supported_version="${modVersion}.*"
-tags={ "1.18 \"Crane\"" }
-remote_file_id="${remoteFileId}"`;
-    await fs.writeFile(path.join(targetDir, 'descriptor.mod'), descriptorContent);
+    const descriptorContent = `name="${modName}"\nversion="${modVersion}"\nsupported_version="${modVersion}.*"\ntags={ "1.18 \\"Crane\\"" }\nremote_file_id="${remoteFileId}"`;
+    await fsPromises.writeFile(path.join(targetDir, 'descriptor.mod'), descriptorContent);
 
     mainWin.webContents.send('progress-update', {
       percent: 20,
-      size: `${Math.round(totalSize/1024/1024)}MB`,
+      size: `${totalSizeMB}MB`,
       speed: '0MB/s',
       eta: 'calculating...',
       files: '0 / ' + totalFiles,
@@ -204,46 +219,57 @@ remote_file_id="${remoteFileId}"`;
       message: `Extracting ${totalFiles} files to ${modFolderName}/`
     });
 
-    // 🔥 SIMULATED REAL-TIME EXTRACTION WITH PROGRESS
+    // 🔥 REAL-TIME EXTRACTION WITH PROGRESS
     const startTime = Date.now();
-    const fakeDelayPerFile = 5;  // ms per file (realistic)
-    
-    for (let i = 0; i < leafFiles.length; i++) {
-      const entry = leafFiles[i];
-      const targetPath = path.join(targetDir, entry.entryName);
-      await fs.mkdir(path.dirname(targetPath), {recursive: true});
-      
-      // Write file
-      const content = entry.getData();
-      await fs.writeFile(targetPath, content);
+    let extractedCount = 0;
+    let extractedSize = 0;
 
-      // 🎯 PROGRESS UPDATE
-      const elapsed = Date.now() - startTime;
-      const percent = Math.round((i + 1) / totalFiles * 80) + 20;  // 20-100%
-      const currentSize = Math.round((i + 1) / totalFiles * totalSize / 1024 / 1024);
-      const avgSpeed = (currentSize * 1024 * 1024 / elapsed * 1000).toFixed(1);
-      const remainingFiles = totalFiles - (i + 1);
-      const etaMs = remainingFiles * fakeDelayPerFile;
-      
-      mainWin.webContents.send('progress-update', {
-        percent,
-        size: `${currentSize}MB / ${Math.round(totalSize/1024/1024)}MB`,
-        speed: `${avgSpeed}MB/s`,
-        eta: `${Math.round(etaMs/1000)}s`,
-        files: `${i + 1} / ${totalFiles}`,
-        status: 'extracting',
-        message: `Writing ${path.basename(targetPath)}`
-      });
-      
-      // Small delay for smooth animation (remove in prod)
-      await new Promise(r => setTimeout(r, fakeDelayPerFile));
+    for (const entry of entries) {
+      const targetPath = path.join(targetDir, entry.filename);
+
+      if (entry.filename.endsWith('/')) {
+        await fsPromises.mkdir(targetPath, { recursive: true });
+      } else {
+        await fsPromises.mkdir(path.dirname(targetPath), { recursive: true });
+        
+        const readStream = await entry.openReadStream();
+        const writeStream = fs.createWriteStream(targetPath);
+        
+        await pipeline(readStream, writeStream);
+
+        extractedCount++;
+        extractedSize += Number(entry.uncompressedSize);
+
+        // 🎯 REAL PROGRESS UPDATE
+        const elapsed = Date.now() - startTime;
+        // Map extraction progress (0-100%) to the 20-100% UI progress window
+        const percent = Math.round((extractedCount / totalFiles) * 80) + 20; 
+        const currentSizeMB = Math.round(extractedSize / 1024 / 1024);
+        
+        // Prevent Infinity/NaN on immediate files
+        const avgSpeed = elapsed > 0 ? (currentSizeMB / (elapsed / 1000)).toFixed(1) : '0.0';
+        
+        const bytesPerMs = elapsed > 0 ? extractedSize / elapsed : 0;
+        const remainingBytes = totalSize - extractedSize;
+        const etaMs = bytesPerMs > 0 ? remainingBytes / bytesPerMs : 0;
+
+        mainWin.webContents.send('progress-update', {
+          percent,
+          size: `${currentSizeMB}MB / ${totalSizeMB}MB`,
+          speed: `${avgSpeed}MB/s`,
+          eta: `${Math.round(etaMs/1000)}s`,
+          files: `${extractedCount} / ${totalFiles}`,
+          status: 'extracting',
+          message: `Writing ${path.basename(targetPath)}`
+        });
+      }
     }
 
     // Final cleanup
     mainWin.webContents.send('progress-update', {
       percent: 100,
-      size: `${Math.round(totalSize/1024/1024)}MB / ${Math.round(totalSize/1024/1024)}MB`,
-      speed: '100%',
+      size: `${totalSizeMB}MB / ${totalSizeMB}MB`,
+      speed: 'Done',
       eta: '0s',
       files: `${totalFiles} / ${totalFiles}`,
       status: 'complete',
@@ -255,6 +281,7 @@ remote_file_id="${remoteFileId}"`;
       message: `🎉 ${modFolderName}/ + ${totalFiles} files extracted`,
       details: `${modName} v${modVersion} → ${modFolderName}`
     };
+
   } catch (err) {
     mainWin.webContents.send('progress-update', {
       percent: 0,
@@ -263,5 +290,7 @@ remote_file_id="${remoteFileId}"`;
     });
     console.error('Install failed:', err);
     return {success: false, error: err.message};
+  } finally {
+    if (zip) await zip.close();
   }
 });
