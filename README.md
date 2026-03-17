@@ -1,7 +1,11 @@
 Auto-detects Documents/Paradox Interactive/Crusader Kings III/mod	
+
 Next free slot mod1/, mod2/, etc.	
+
 Works with ANY ZIP (Nexus, GitHub, local)	
+
 Portable EXE - no install needed	
+
 CK3 1.18.4 "Crane" compatible
 
 
