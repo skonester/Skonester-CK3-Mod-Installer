@@ -2,7 +2,7 @@ APP Preview
 https://htmlpreview.github.io/?https://github.com/skonester/Skonester-CK3-Mod-Installer/blob/main/index.html
 
 Auto-detects Documents/Paradox Interactive/Crusader Kings III/mod	
-Manual Install Option
+Manual Install or Drag and Drop Option
 
 Next free slot mod1/, mod2/, etc.	
 
