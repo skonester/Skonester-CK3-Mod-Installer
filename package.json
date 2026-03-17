@@ -1,22 +1,49 @@
 {
-  "name": "skonester-3398662167",
-  "version": "1.0.0",
+  "name": "skonester-ck3-mod-installer",
+  "version": "1.18.4",
+  "description": "Universal CK3 Mod Installer - mod1, mod2, mod3 auto-slotting",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder --win portable"
+    "dev": "electron . --enable-logging",
+    "dist": "electron-builder --win portable",
+    "dist-all": "electron-builder --win portable --publish=never",
+    "postinstall": "electron-builder install-app-deps"
   },
   "dependencies": {
-    "jszip": "^3.10.1"
+    "adm-zip": "^0.5.16"
   },
   "devDependencies": {
     "electron": "^41.0.2",
     "electron-builder": "^26.8.1"
   },
   "build": {
-    "appId": "skonester.3398662167",
+    "appId": "com.skonester.ck3modinstaller",
+    "productName": "CK3 Mod Installer",
+    "executableName": "CK3-Mod-Installer",
+    "directories": {
+      "output": "dist"
+    },
     "files": [
-      "**/*"
-    ]
+      "**/*",
+      "!**/node_modules/{electron,electron-builder,test,devtron,nyc,ava,**}",
+      "!dist/**/*",
+      "!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}",
+      "!{build,dist,electron-builder-docs,test,tests,typedoc,node_modules}/**/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "requestedExecutionLevel": "highestAvailable"
+    },
+    "portable": {
+      "unpackDirName": false
+    },
+    "compression": "maximum"
   }
 }
