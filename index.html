@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Skonester CK3 Mod Installer</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(rgba(20,20,20,0.9), rgba(10,10,10,0.95)),
+        url('https://github.com/skonester/Skonester-Cheat-Menu/raw/main/thumbnail.png');
+    background-size: cover; background-position: center; background-attachment: fixed;
+    color: #e5e5e5; min-height: 100vh; display: flex; flex-direction: column;
+    align-items: center; padding: 20px;
+}
+
+.header, .container { background: rgba(25,25,25,0.95); backdrop-filter: blur(20px);
+    border-radius: 20px; border: 1px solid rgba(80,80,80,0.5); box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+    width: 100%; max-width: 600px; margin-bottom: 20px;
+}
+
+.header { text-align: center; padding: 32px; }
+.container { padding: 40px; }
+
+.title { font-size: 2rem; font-weight: 700; color: #ff6b6b; margin-bottom: 8px; letter-spacing: 1px; }
+.subtitle { font-size: 1rem; color: #b8b8b8; font-weight: 400; }
+
+.section { margin-bottom: 32px; }
+.section-title { font-size: 1.2rem; font-weight: 600; color: #f0f0f0; margin-bottom: 16px; }
+
+/* 🌟 NEW: Input styling */
+.input-field { 
+    background: linear-gradient(145deg, #3a3a3a 0%, #2a2a2a 100%); 
+    color: #ffffff; border: 1px solid rgba(255,107,107,0.4); 
+    padding: 16px 20px; width: 100%; border-radius: 16px; font-size: 1rem; 
+    font-weight: 500; transition: all 0.2s ease; margin-bottom: 12px;
+}
+.input-field:focus { outline: none; border-color: #ff6b6b; box-shadow: 0 0 0 3px rgba(255,107,107,0.1); }
+
+.btn { background: linear-gradient(145deg, #4a4a4a 0%, #333 100%); color: #ffffff;
+    border: 1px solid rgba(255,107,107,0.3); padding: 16px 24px; width: 100%;
+    border-radius: 16px; font-size: 1rem; font-weight: 500; cursor: pointer;
+    transition: all 0.2s ease; box-shadow: 0 8px 20px rgba(0,0,0,0.4); margin-bottom: 8px;
+}
+
+.btn:hover:not(:disabled) { background: linear-gradient(145deg, #5a5a5a 0%, #444 100%);
+    box-shadow: 0 12px 25px rgba(0,0,0,0.5); transform: translateY(-1px); }
+
+.btn:disabled { background: #2a2a2a; cursor: not-allowed; opacity: 0.6; }
+
+.btn.primary { background: linear-gradient(145deg, #4a90e2 0%, #357abd 100%); border-color: rgba(74,144,226,0.5); }
+.btn.primary:hover:not(:disabled) { background: linear-gradient(145deg, #5aa0f2 0%, #4d8fd2 100%); }
+
+.btn.auto { background: linear-gradient(145deg, #f39c12 0%, #e67e22 100%); border-color: rgba(243,156,18,0.5); }
+.btn.auto:hover:not(:disabled) { background: linear-gradient(145deg, #f7b549 0%, #f39c12 100%); }
+
+.status { background: rgba(30,30,30,0.9); padding: 20px; border-radius: 16px; text-align: center;
+    font-weight: 500; border: 1px solid rgba(60,60,60,0.5); min-height: 80px; transition: all 0.2s ease; }
+
+.status.success { background: rgba(40,40,40,0.95); border-color: rgba(100,160,100,0.4); color: #c8e6c8; }
+
+.info { font-size: 0.95rem; margin: 12px 0; color: #cccccc; font-weight: 400; }
+.path-display { background: rgba(0,0,0,0.5); padding: 12px; border-radius: 8px; font-family: monospace; 
+    font-size: 0.9rem; word-break: break-all; margin-top: 8px; }
+
+.mod-preview { background: rgba(25,25,25,0.95); padding: 24px; border-radius: 16px; font-family: monospace;
+    font-size: 0.85rem; border-left: 4px solid #00ff88; margin: 20px 0; line-height: 1.6;
+    border: 1px solid rgba(60,60,60,0.5); }
+
+.status-icon { font-size: 1.4rem; margin-right: 8px; }
+
+@media (max-width: 640px) { .container, .header { margin: 0 10px; padding: 28px 24px; } .title { font-size: 1.6rem; } }
+</style>
+</head>
+<body>
+<div class="header">
+    <h1 class="title">🛠️ Skonester</h1>
+    <p class="subtitle">CK3 Mod Installer • March 16th 2026</p>
+</div>
+
+<div class="container">
+    <div class="section">
+        <h3 class="section-title">📦 1. Select Mod ZIP</h3>
+        <button id="zipBtn" class="btn">📥 Choose ZIP File</button>
+        <div id="zipInfo" class="info"></div>
+    </div>
+
+    <!-- 🌟 NEW MOD DETAILS SECTION -->
+    <div class="section">
+        <h3 class="section-title">⚙️ 2. Mod Details</h3>
+        <input id="modName" class="input-field" placeholder="Mod Name" value="My Mod Name">
+        <input id="modId" class="input-field" placeholder="Mod ID (e.g. Not Required)" value="0">
+        <input id="modVersion" class="input-field" placeholder="Version (e.g. 1.18.4)" value="1.18.4">
+    </div>
+
+    <div class="section">
+        <h3 class="section-title">📁 3. Select Mods Folder</h3>
+        <p class="info"><strong>Navigate to:</strong><br>
+        <code>Documents → Paradox Interactive → Crusader Kings III → mod</code></p>
+        <button id="autoDetectBtn" class="btn auto">🔍 AUTO-DETECT FOLDER</button>
+        <button id="folderBtn" class="btn primary">📂 SELECT MANUALLY</button>
+        <div id="folderInfo" class="info"></div>
+        <div id="folderPathDisplay" class="path-display" style="display:none;"></div>
+    </div>
+
+    <div class="mod-preview" id="modPreview">
+        <strong>Will create <span id="previewFilename">3398662167.mod</span>:</strong><br>
+        <code id="previewContent">
+name="Skonester Cheat Menu"<br>
+path="mod/[ZIP_FOLDER_NAME]"<br>
+remote_file_id="3398662167"<br>
+version="1.18.4"<br>
+tags={ "1.18 \"Crane\"" }
+        </code>
+    </div>
+
+    <button id="installBtn" class="btn" disabled style="font-size: 1.1rem; font-weight: 600; margin-top: 20px; padding: 20px;">
+        ⚡ INSTALL MOD
+    </button>
+
+    <div id="status" class="status">
+        <span class="status-icon">1️⃣</span> Select ZIP file first
+    </div>
+</div>
+
+<script>
+let zipFile = null;
+let folderPath = null;
+let modData = { modId: '3398662167', modName: 'Skonester Cheat Menu', version: '1.18.4' };
+
+// 🌟 MOD INPUT HANDLERS
+document.getElementById('modName').oninput = updateModData;
+document.getElementById('modId').oninput = updateModData;
+document.getElementById('modVersion').oninput = updateModData;
+
+function updateModData() {
+    modData.modName = document.getElementById('modName').value || 'Custom Mod';
+    modData.modId = document.getElementById('modId').value || 'custom';
+    modData.version = document.getElementById('modVersion').value || '1.18.4';
+    
+    // Live preview update
+    document.getElementById('previewFilename').textContent = modData.modId + '.mod';
+    document.getElementById('previewContent').innerHTML = 
+        `name="${modData.modName}"<br>` +
+        `path="mod/[ZIP_FOLDER_NAME]"<br>` +
+        `remote_file_id="${modData.modId}"<br>` +
+        `version="${modData.version}"<br>` +
+        `tags={ "1.18 \\\"Crane\\"" }`;
+    
+    checkReady();
+}
+
+// ZIP SELECTION
+document.getElementById('zipBtn').onclick = async () => {
+    try {
+        zipFile = await app.pickZip();
+        const info = document.getElementById('zipInfo');
+        if (zipFile) {
+            info.textContent = `✅ ${zipFile.split(/[\\/]/).pop()} loaded`;
+            info.style.color = '#c8e6c8';
+        }
+        updateStatus();
+        checkReady();
+    } catch(e) {
+        document.getElementById('zipInfo').textContent = `❌ ${e.message}`;
+        document.getElementById('zipInfo').style.color = '#ffb3b3';
+    }
+};
+
+// AUTO-DETECT
+document.getElementById('autoDetectBtn').onclick = async () => {
+    const status = document.getElementById('status');
+    status.innerHTML = '<span class="status-icon">🔍</span> Auto-detecting...';
+    
+    try {
+        folderPath = await app.autoDetectCK3ModsFolder();
+        if (folderPath) {
+            document.getElementById('folderPathDisplay').textContent = folderPath;
+            document.getElementById('folderPathDisplay').style.display = 'block';
+            document.getElementById('folderInfo').innerHTML = `✅ Auto-detected: ${folderPath.split(/[\\/]/).pop()}`;
+            document.getElementById('folderInfo').style.color = '#c8e6c8';
+        } else {
+            throw new Error('CK3 mods folder not found');
+        }
+    } catch(e) {
+        status.innerHTML = `<span class="status-icon">⚠️</span> ${e.message}<br><small>Select manually</small>`;
+        document.getElementById('folderInfo').textContent = 'ℹ️ Use manual selection';
+        document.getElementById('folderInfo').style.color = '#f39c12';
+        return;
+    }
+    updateStatus();
+    checkReady();
+};
+
+// MANUAL FOLDER
+document.getElementById('folderBtn').onclick = async () => {
+    try {
+        folderPath = await app.pickFolder();
+        if (folderPath) {
+            document.getElementById('folderPathDisplay').textContent = folderPath;
+            document.getElementById('folderPathDisplay').style.display = 'block';
+            document.getElementById('folderInfo').innerHTML = `✅ ${folderPath.split(/[\\/]/).pop()}`;
+            document.getElementById('folderInfo').style.color = '#c8e6c8';
+            updateStatus();
+            checkReady();
+        }
+    } catch(e) {
+        document.getElementById('folderInfo').textContent = `❌ ${e.message}`;
+        document.getElementById('folderInfo').style.color = '#ffb3b3';
+    }
+};
+
+// 🌟 UNIVERSAL INSTALL
+document.getElementById('installBtn').onclick = async () => {
+    const status = document.getElementById('status');
+    status.innerHTML = '<span class="status-icon">🚀</span> Installing...';
+    
+    try {
+        const result = await app.install({
+            zipPath: zipFile,
+            folderPath: folderPath,
+            modName: modData.modName,
+            modId: modData.modId,
+            version: modData.version
+        });
+        
+        if (result.success) {
+            status.innerHTML = `<span class="status-icon">✅</span> ${result.message}`;
+            status.className = 'status success';
+        } else {
+            throw new Error(result.error || 'Failed');
+        }
+    } catch(e) {
+        status.innerHTML = `<span class="status-icon">❌</span> ${e.message}`;
+    }
+};
+
+function checkReady() {
+    document.getElementById('installBtn').disabled = !(zipFile && folderPath && modData.modId);
+}
+
+function updateStatus() {
+    const status = document.getElementById('status');
+    if (zipFile && folderPath && modData.modId) {
+        status.innerHTML = '<span class="status-icon">✅</span> Ready! Click Install';
+        status.className = 'status success';
+    } else if (zipFile && folderPath) {
+        status.innerHTML = '<span class="status-icon">2️⃣</span> Enter mod details';
+    } else if (zipFile) {
+        status.innerHTML = '<span class="status-icon">2️⃣</span> Select/auto-detect folder';
+    } else {
+        status.innerHTML = '<span class="status-icon">1️⃣</span> Select ZIP first';
+    }
+}
+
+// Init preview
+updateModData();
+</script>
+</body>
+</html>
