@@ -86,7 +86,7 @@ ipcMain.handle('auto-detect-ck3-mods-folder', async function() {
   }
 });
 
-// ✅ FIXED 'install' handler - Smart flattening only when root folder exists
+// ✅ UPDATED 'install' handler - Uses ZIP root folder name, generates both .mod files, matches your exact format
 ipcMain.handle('install', async function(event, data) {
   try {
     var JSZip = require('jszip');
@@ -94,57 +94,68 @@ ipcMain.handle('install', async function(event, data) {
     var zipData = await fs.readFile(data.zipPath);
     await zip.loadAsync(zipData);
 
+    // 🔧 IMPROVED: Detect single root folder name from ZIP structure
+    var files = Object.keys(zip.files).filter(f => !zip.files[f].dir);
+    var rootFolderName = null;
+    if (files.length > 0) {
+      const firstParts = files.map(f => f.split('/')[0]).filter(Boolean);
+      if (firstParts.length && firstParts.every(p => p === firstParts[0])) {
+        rootFolderName = firstParts[0];
+      }
+    }
+
+    // Use ZIP root folder name, or fall back to modN
     var modNumber = 1;
-    var modFolderName;
-    while (true) {
-      modFolderName = `mod${modNumber}`;
+    var modFolderName = rootFolderName;
+    while (modFolderName) {
       var targetDir = path.join(data.folderPath, modFolderName);
       try {
         await fs.access(targetDir);
+        modFolderName = `mod${modNumber}`;
         modNumber++;
       } catch {
         break;
       }
     }
+    if (!modFolderName) modFolderName = `mod${modNumber}`;
 
     var modFilename = `${modFolderName}.mod`;
-    var modName = data.modName || `Mod ${modNumber}`;
-    var modVersion = data.version || '1.18.*';
-    var modId = data.modId || '';
+    var modName = data.modName || 'My Mod Name';
+    var modVersion = data.version || '1.18.4';
+    var remoteFileId = data.modId ?? '0';
     
-    var modContent = `name="${modName}"\\n` +
-                     `path="mod/${modFolderName}"\\n` +
-                     `supported_version="${modVersion}"\\n`;
+    // ✅ MATCHES YOUR FORMAT: external .mod file exactly as requested
+    var externalModContent = `name="${modName}"\n` +
+                            `path="mod/${modFolderName}"\n` +
+                            `remote_file_id="${remoteFileId}"\n` +
+                            `version="${modVersion}"\n` +
+                            `tags={ "1.18 \\"Crane\\"" }`;
+
+    await fs.writeFile(path.join(data.folderPath, modFilename), externalModContent);
+
+    // ✅ BONUS: Also create standard descriptor.mod INSIDE mod folder (CK3 launcher expects this)
+    var descriptorContent = `name="${modName}"\n` +
+                           `version="${modVersion}"\n` +
+                           `supported_version="${modVersion}"\n` +
+                           `tags={ "1.18 \\"Crane\\"" }\n` +
+                           `remote_file_id="${remoteFileId}"`;
     
-    if (modId) modContent += `remote_file_id="${modId}"\\n`;
-    modContent += `version="${modVersion}"\\n` +
-                 'tags={"1.18 \\"Crane\\""}';
-
-    await fs.writeFile(path.join(data.folderPath, modFilename), modContent);
-
     var targetDir = path.join(data.folderPath, modFolderName);
     await fs.mkdir(targetDir, {recursive: true});
+    await fs.writeFile(path.join(targetDir, 'descriptor.mod'), descriptorContent);
 
-    // 🔧 FIXED: Detect if zip has root folder vs flat structure, then extract accordingly
-    var files = Object.keys(zip.files);
-    var hasRootFolder = files.length > 0 && files.every(filePath => {
-      // Check if ALL files are inside a single root folder (common mod zip pattern)
-      const firstSlashIndex = filePath.indexOf('/');
-      return firstSlashIndex !== -1;
-    }) && files.some(filePath => filePath.includes('/'));
-
+    // 🔧 IMPROVED extraction: flatten root folder if present
     for (var i = 0; i < files.length; i++) {
       var fullZipPath = files[i];
       var zipFile = zip.files[fullZipPath];
-      if (zipFile.dir) continue;
-
+      
       var targetPath;
-      if (hasRootFolder) {
-        // ✅ FLATTEN: Remove root folder name (e.g., "MyMod/files/..." → "files/...")
+      if (rootFolderName) {
+        // FLATTEN: Remove root folder (e.g., "MyMod/files/..." → "files/...")
         const firstSlashIndex = fullZipPath.indexOf('/');
         targetPath = path.join(targetDir, fullZipPath.substring(firstSlashIndex + 1));
       } else {
-        // ✅ PRESERVE: Clean zip with files at root (e.g., "descriptor.mod" → "descriptor.mod")
+        // PRESERVE: No root folder
         targetPath = path.join(targetDir, fullZipPath);
       }
 
@@ -155,8 +166,8 @@ ipcMain.handle('install', async function(event, data) {
 
     return {
       success: true,
-      message: `✅ Created ${modFolderName}/ + ${modFilename}`,
-      details: `${modName} (slot ${modNumber})`
+      message: `✅ Created ${modFolderName}/ + ${modFilename} + descriptor.mod`,
+      details: `${modName} (folder: ${modFolderName})`
     };
   } catch (err) {
     return {success: false, error: err.message};
