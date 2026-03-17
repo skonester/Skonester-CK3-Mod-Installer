@@ -1,4 +1,4 @@
-const {app, BrowserWindow, ipcMain} = require('electron');
+const {app, BrowserWindow, ipcMain, systemPreferences} = require('electron');
 const {dialog} = require('electron');
 const fs = require('fs').promises;
 const path = require('path');
@@ -8,16 +8,42 @@ let mainWin;
 
 app.whenReady().then(function() {
   mainWin = new BrowserWindow({
-    width: 600,
-    height: 550,
+    width: 700,
+    height: 900,
+    frame: false,
+    transparent: true,
+    backgroundColor: '#00000000',
+    titleBarStyle: 'hiddenInset',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true
     }
   });
+  
+  // 🌟 FIXED: Platform-safe accent color (Windows only)
+  if (process.platform === 'win32') {
+    try {
+      const accentColor = systemPreferences.getAccentColor();
+      if (accentColor && typeof mainWin.setAccentColor === 'function') {
+        mainWin.setAccentColor(accentColor);
+      }
+    } catch (err) {
+      console.log('Accent color not supported:', err.message);
+    }
+  }
+  
   mainWin.loadFile('index.html');
 });
 
+// Window controls
+ipcMain.handle('window-minimize', () => mainWin.minimize());
+ipcMain.handle('window-maximize', () => {
+  if (mainWin.isMaximized()) mainWin.unmaximize();
+  else mainWin.maximize();
+});
+ipcMain.handle('window-close', () => mainWin.close());
+
+// [REST OF YOUR HANDLERS UNCHANGED - pick-zip, pick-folder, auto-detect, install]
 ipcMain.handle('pick-zip', async function() {
   var result = await dialog.showOpenDialog({
     properties: ['openFile'],
@@ -33,7 +59,6 @@ ipcMain.handle('pick-folder', async function() {
   return result.filePaths[0] || null;
 });
 
-// AUTO-DETECT (unchanged)
 ipcMain.handle('auto-detect-ck3-mods-folder', async function() {
   try {
     const documentsPath = path.join(os.homedir(), 'Documents');
@@ -62,7 +87,6 @@ ipcMain.handle('auto-detect-ck3-mods-folder', async function() {
   }
 });
 
-// 🔥 AUTO-INCREMENT MOD INSTALLER (one at a time)
 ipcMain.handle('install', async function(event, data) {
   try {
     var JSZip = require('jszip');
@@ -70,7 +94,6 @@ ipcMain.handle('install', async function(event, data) {
     var zipData = await fs.readFile(data.zipPath);
     await zip.loadAsync(zipData);
 
-    // 🌟 FIND NEXT FREE modN folder
     var modNumber = 1;
     var modFolderName;
     while (true) {
@@ -80,19 +103,18 @@ ipcMain.handle('install', async function(event, data) {
         await fs.access(targetDir);
         modNumber++;
       } catch {
-        break; // Found empty slot!
+        break;
       }
     }
 
-    // Create matching .mod file
     var modFilename = `${modFolderName}.mod`;
     var modName = data.modName || `Mod ${modNumber}`;
     var modVersion = data.version || '1.18.*';
     var modId = data.modId || '';
     
     var modContent = `name="${modName}"\n` +
-                    `path="mod/${modFolderName}"\n` +
-                    `supported_version="${modVersion}"\n`;
+                     `path="mod/${modFolderName}"\n` +
+                     `supported_version="${modVersion}"\n`;
     
     if (modId) modContent += `remote_file_id="${modId}"\n`;
     modContent += `version="${modVersion}"\n` +
@@ -100,7 +122,6 @@ ipcMain.handle('install', async function(event, data) {
 
     await fs.writeFile(path.join(data.folderPath, modFilename), modContent);
 
-    // Extract to new folder
     var targetDir = path.join(data.folderPath, modFolderName);
     await fs.mkdir(targetDir, {recursive: true});
 

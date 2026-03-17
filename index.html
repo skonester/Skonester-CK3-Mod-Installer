@@ -7,6 +7,16 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+:root {
+  /* 🌟 Electron 40: System accent-aware */
+  --accent: #ff6b6b;
+  --system-accent: rgba(255,107,107,0.2);
+  accent-color: var(--accent);
+  caret-shape: block; /* Chromium 144 */
+  scrollbar-gutter: stable;
+  scrollbar-color: var(--accent) rgba(40,40,40,0.5);
+}
+
 body {
     font-family: 'Inter', sans-serif;
     background: linear-gradient(rgba(20,20,20,0.9), rgba(10,10,10,0.95)),
@@ -16,66 +26,179 @@ body {
     align-items: center; padding: 20px;
 }
 
-.header, .container { background: rgba(25,25,25,0.95); backdrop-filter: blur(20px);
-    border-radius: 20px; border: 1px solid rgba(80,80,80,0.5); box-shadow: 0 20px 40px rgba(0,0,0,0.6);
-    width: 100%; max-width: 600px; margin-bottom: 20px;
+.titlebar-drag {
+  -webkit-app-region: drag;
 }
 
-.header { text-align: center; padding: 32px; }
+.titlebar-nodrag {
+  -webkit-app-region: no-drag;
+}
+
+.header, .container { 
+  background: rgba(25,25,25,0.95); 
+  backdrop-filter: blur(20px);
+  border-radius: 20px; 
+  border: 1px solid rgba(80,80,80,0.5); 
+  box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+  width: 100%; max-width: 600px; margin-bottom: 20px;
+  will-change: transform; /* Electron 40 HW accel boost */
+}
+
+.header { 
+  text-align: center; 
+  padding: 32px;
+  position: relative;
+}
+.header::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(145deg, transparent 0%, var(--system-accent) 50%, transparent 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+.header:hover::after { opacity: 1; }
+
 .container { padding: 40px; }
 
-.title { font-size: 2rem; font-weight: 700; color: #ff6b6b; margin-bottom: 8px; letter-spacing: 1px; }
+.title { 
+  font-size: 2rem; font-weight: 700; color: var(--accent); 
+  margin-bottom: 8px; letter-spacing: 1px; 
+}
 .subtitle { font-size: 1rem; color: #b8b8b8; font-weight: 400; }
 
 .section { margin-bottom: 32px; }
-.section-title { font-size: 1.2rem; font-weight: 600; color: #f0f0f0; margin-bottom: 16px; }
+.section-title { 
+  font-size: 1.2rem; font-weight: 600; color: #f0f0f0; 
+  margin-bottom: 16px; 
+}
 
-/* 🌟 NEW: Input styling */
+/* 🌟 Enhanced inputs with Electron 40 CSS */
 .input-field { 
     background: linear-gradient(145deg, #3a3a3a 0%, #2a2a2a 100%); 
-    color: #ffffff; border: 1px solid rgba(255,107,107,0.4); 
-    padding: 16px 20px; width: 100%; border-radius: 16px; font-size: 1rem; 
-    font-weight: 500; transition: all 0.2s ease; margin-bottom: 12px;
+    color: #ffffff; 
+    border: 1px solid rgba(255,107,107,0.4); 
+    padding: 16px 20px; 
+    width: 100%; 
+    border-radius: 16px; 
+    font-size: 1rem; 
+    font-weight: 500; 
+    transition: all 0.2s ease; 
+    margin-bottom: 12px;
+    caret-color: var(--accent);
 }
-.input-field:focus { outline: none; border-color: #ff6b6b; box-shadow: 0 0 0 3px rgba(255,107,107,0.1); }
-
-.btn { background: linear-gradient(145deg, #4a4a4a 0%, #333 100%); color: #ffffff;
-    border: 1px solid rgba(255,107,107,0.3); padding: 16px 24px; width: 100%;
-    border-radius: 16px; font-size: 1rem; font-weight: 500; cursor: pointer;
-    transition: all 0.2s ease; box-shadow: 0 8px 20px rgba(0,0,0,0.4); margin-bottom: 8px;
+.input-field:focus { 
+  outline: none; 
+  border-color: var(--accent); 
+  box-shadow: 0 0 0 3px var(--system-accent); 
 }
 
-.btn:hover:not(:disabled) { background: linear-gradient(145deg, #5a5a5a 0%, #444 100%);
-    box-shadow: 0 12px 25px rgba(0,0,0,0.5); transform: translateY(-1px); }
+.btn { 
+  background: linear-gradient(145deg, #4a4a4a 0%, #333 100%); 
+  color: #ffffff;
+  border: 1px solid rgba(255,107,107,0.3); 
+  padding: 16px 24px; 
+  width: 100%;
+  border-radius: 16px; 
+  font-size: 1rem; 
+  font-weight: 500; 
+  cursor: pointer;
+  transition: all 0.2s ease; 
+  box-shadow: 0 8px 20px rgba(0,0,0,0.4); 
+  margin-bottom: 8px;
+  will-change: transform;
+}
+
+@keyframes glow {
+  to { box-shadow: 0 0 30px var(--system-accent); }
+}
+
+.btn:hover:not(:disabled) { 
+  background: linear-gradient(145deg, #5a5a5a 0%, #444 100%);
+  box-shadow: 0 12px 25px rgba(0,0,0,0.5); 
+  transform: translateY(-1px); 
+  animation: glow 0.3s ease;
+}
 
 .btn:disabled { background: #2a2a2a; cursor: not-allowed; opacity: 0.6; }
 
-.btn.primary { background: linear-gradient(145deg, #4a90e2 0%, #357abd 100%); border-color: rgba(74,144,226,0.5); }
-.btn.primary:hover:not(:disabled) { background: linear-gradient(145deg, #5aa0f2 0%, #4d8fd2 100%); }
+.btn.primary { 
+  background: linear-gradient(145deg, #4a90e2 0%, #357abd 100%); 
+  border-color: rgba(74,144,226,0.5); 
+}
+.btn.primary:hover:not(:disabled) { 
+  background: linear-gradient(145deg, #5aa0f2 0%, #4d8fd2 100%); 
+}
 
-.btn.auto { background: linear-gradient(145deg, #f39c12 0%, #e67e22 100%); border-color: rgba(243,156,18,0.5); }
-.btn.auto:hover:not(:disabled) { background: linear-gradient(145deg, #f7b549 0%, #f39c12 100%); }
+.btn.auto { 
+  background: linear-gradient(145deg, #f39c12 0%, #e67e22 100%); 
+  border-color: rgba(243,156,18,0.5); 
+}
+.btn.auto:hover:not(:disabled) { 
+  background: linear-gradient(145deg, #f7b549 0%, #f39c12 100%); 
+}
 
-.status { background: rgba(30,30,30,0.9); padding: 20px; border-radius: 16px; text-align: center;
-    font-weight: 500; border: 1px solid rgba(60,60,60,0.5); min-height: 80px; transition: all 0.2s ease; }
+.status { 
+  background: rgba(30,30,30,0.9); 
+  padding: 20px; 
+  border-radius: 16px; 
+  text-align: center;
+  font-weight: 500; 
+  border: 1px solid rgba(60,60,60,0.5); 
+  min-height: 80px; 
+  transition: all 0.2s ease; 
+}
 
-.status.success { background: rgba(40,40,40,0.95); border-color: rgba(100,160,100,0.4); color: #c8e6c8; }
+.status.success { 
+  background: rgba(40,40,40,0.95); 
+  border-color: rgba(100,160,100,0.4); 
+  color: #c8e6c8; 
+}
 
-.info { font-size: 0.95rem; margin: 12px 0; color: #cccccc; font-weight: 400; }
-.path-display { background: rgba(0,0,0,0.5); padding: 12px; border-radius: 8px; font-family: monospace; 
-    font-size: 0.9rem; word-break: break-all; margin-top: 8px; }
+.info { 
+  font-size: 0.95rem; 
+  margin: 12px 0; 
+  color: #cccccc; 
+  font-weight: 400; 
+}
+.path-display { 
+  background: rgba(0,0,0,0.5); 
+  padding: 12px; 
+  border-radius: 8px; 
+  font-family: monospace; 
+  font-size: 0.9rem; 
+  word-break: break-all; 
+  margin-top: 8px; 
+}
 
-.mod-preview { background: rgba(25,25,25,0.95); padding: 24px; border-radius: 16px; font-family: monospace;
-    font-size: 0.85rem; border-left: 4px solid #00ff88; margin: 20px 0; line-height: 1.6;
-    border: 1px solid rgba(60,60,60,0.5); }
+.mod-preview { 
+  background: rgba(25,25,25,0.95); 
+  padding: 24px; 
+  border-radius: 16px; 
+  font-family: monospace;
+  font-size: 0.85rem; 
+  border-left: 4px solid #00ff88; 
+  margin: 20px 0; 
+  line-height: 1.6;
+  border: 1px solid rgba(60,60,60,0.5); 
+}
 
 .status-icon { font-size: 1.4rem; margin-right: 8px; }
 
-@media (max-width: 640px) { .container, .header { margin: 0 10px; padding: 28px 24px; } .title { font-size: 1.6rem; } }
+@media (max-width: 640px) { 
+  .container, .header { margin: 0 10px; padding: 28px 24px; } 
+  .title { font-size: 1.6rem; } 
+}
 </style>
 </head>
 <body>
-<div class="header">
+<div class="header titlebar-drag">
+    <div class="titlebar-nodrag" style="position: absolute; top: 10px; right: 10px; display: flex; gap: 10px;">
+        <button onclick="app.minimize()" style="background:none;border:none;color:#fff;font-size:16px;padding:5px;cursor:pointer;">−</button>
+        <button onclick="app.maximize()" style="background:none;border:none;color:#fff;font-size:16px;padding:5px;cursor:pointer;">□</button>
+        <button onclick="app.close()" style="background:none;border:none;color:#fff;font-size:16px;padding:5px;cursor:pointer;">✕</button>
+    </div>
     <h1 class="title">🛠️ Skonester</h1>
     <p class="subtitle">CK3 Mod Installer • March 16th 2026</p>
 </div>
@@ -87,7 +210,7 @@ body {
         <div id="zipInfo" class="info"></div>
     </div>
 
-    <!-- 🌟 NEW MOD DETAILS SECTION -->
+    <!-- 🌟 MOD DETAILS -->
     <div class="section">
         <h3 class="section-title">⚙️ 2. Mod Details</h3>
         <input id="modName" class="input-field" placeholder="Mod Name" value="My Mod Name">
@@ -125,12 +248,28 @@ tags={ "1.18 \"Crane\"" }
     </div>
 </div>
 
+<!-- 🌟 Preload first (Electron 40 secure context isolation) -->
+<script src="preload.js"></script>
 <script>
 let zipFile = null;
 let folderPath = null;
 let modData = { modId: '3398662167', modName: 'Skonester Cheat Menu', version: '1.18.4' };
 
-// 🌟 MOD INPUT HANDLERS
+// 🌟 Init Electron 40 system accent
+async function initAccent() {
+  try {
+    const accent = await window.app.getSystemAccent();
+    if (accent) {
+      document.documentElement.style.setProperty('--accent', accent);
+      document.documentElement.style.setProperty('--system-accent', accent + '20');
+    }
+  } catch(e) {
+    console.log('Accent API not available');
+  }
+}
+initAccent();
+
+// MOD INPUT HANDLERS
 document.getElementById('modName').oninput = updateModData;
 document.getElementById('modId').oninput = updateModData;
 document.getElementById('modVersion').oninput = updateModData;
@@ -155,7 +294,7 @@ function updateModData() {
 // ZIP SELECTION
 document.getElementById('zipBtn').onclick = async () => {
     try {
-        zipFile = await app.pickZip();
+        zipFile = await window.app.pickZip();
         const info = document.getElementById('zipInfo');
         if (zipFile) {
             info.textContent = `✅ ${zipFile.split(/[\\/]/).pop()} loaded`;
@@ -175,7 +314,7 @@ document.getElementById('autoDetectBtn').onclick = async () => {
     status.innerHTML = '<span class="status-icon">🔍</span> Auto-detecting...';
     
     try {
-        folderPath = await app.autoDetectCK3ModsFolder();
+        folderPath = await window.app.autoDetectCK3ModsFolder();
         if (folderPath) {
             document.getElementById('folderPathDisplay').textContent = folderPath;
             document.getElementById('folderPathDisplay').style.display = 'block';
@@ -197,7 +336,7 @@ document.getElementById('autoDetectBtn').onclick = async () => {
 // MANUAL FOLDER
 document.getElementById('folderBtn').onclick = async () => {
     try {
-        folderPath = await app.pickFolder();
+        folderPath = await window.app.pickFolder();
         if (folderPath) {
             document.getElementById('folderPathDisplay').textContent = folderPath;
             document.getElementById('folderPathDisplay').style.display = 'block';
@@ -212,13 +351,13 @@ document.getElementById('folderBtn').onclick = async () => {
     }
 };
 
-// 🌟 UNIVERSAL INSTALL
+// 🌟 INSTALL
 document.getElementById('installBtn').onclick = async () => {
     const status = document.getElementById('status');
     status.innerHTML = '<span class="status-icon">🚀</span> Installing...';
     
     try {
-        const result = await app.install({
+        const result = await window.app.install({
             zipPath: zipFile,
             folderPath: folderPath,
             modName: modData.modName,
@@ -255,7 +394,7 @@ function updateStatus() {
     }
 }
 
-// Init preview
+// Init
 updateModData();
 </script>
 </body>

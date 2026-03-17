@@ -15,6 +15,6 @@ CK3 1.18.4 "Crane" compatible
 
 Built with
  
-*Electron v30.0.0
+*Electron v.40
 * JSZip v3.10.1 
 * Node.js v20+
