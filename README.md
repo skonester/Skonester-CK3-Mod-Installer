@@ -18,4 +18,3 @@ Built with
 *Electron v30.0.0
 * JSZip v3.10.1 
 * Node.js v20+
-* Built on Windows 11 x64
