@@ -1,6 +1,6 @@
 {
   "name": "skonester-ck3-mod-installer",
-  "version": "1.19.1",
+  "version": "1.19.2",
   "description": "Universal CK3 Mod Installer - mod1, mod2, mod3 auto-slotting",
   "main": "main.js",
   "scripts": {
