@@ -1,8 +1,12 @@
 {
   "name": "skonester-ck3-mod-installer",
-  "version": "1.19.2",
+  "version": "1.19.3",
   "description": "Universal CK3 Mod Installer - mod1, mod2, mod3 auto-slotting",
   "main": "main.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/skonester/skonester-ck3-mod-installer.git"
+  },
   "scripts": {
     "start": "electron .",
     "dev": "electron . --enable-logging",
