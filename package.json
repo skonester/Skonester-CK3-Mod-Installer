@@ -1,13 +1,15 @@
 {
   "name": "skonester-ck3-mod-installer",
-  "version": "1.18.4",
+  "version": "1.19.0",
   "description": "Universal CK3 Mod Installer - mod1, mod2, mod3 auto-slotting",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
     "dev": "electron . --enable-logging",
-    "dist": "electron-builder --win portable",
-    "dist-all": "electron-builder --win portable --publish=never",
+    "dist:win": "electron-builder --win portable",
+    "dist:mac": "electron-builder --mac dmg",
+    "dist:linux": "electron-builder --linux AppImage",
+    "dist:all": "electron-builder -mwl",
     "postinstall": "electron-builder install-app-deps"
   },
   "dependencies": {
@@ -35,6 +37,16 @@
     },
     "portable": {
       "unpackDirName": false
+    },
+    "mac": {
+      "target": ["dmg"],
+      "icon": "build/icon.icns",
+      "category": "public.app-category.utilities"
+    },
+    "linux": {
+      "target": ["AppImage"],
+      "icon": "build/icon.png",
+      "category": "Utility"
     },
     "compression": "maximum"
   }

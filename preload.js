@@ -11,17 +11,19 @@ contextBridge.exposeInMainWorld('app', {
   
   // 📡 Real-time Updates (Main -> Renderer)
   onInstallStatus: (callback) => {
-    // Used for "Analyzing ZIP..." or "Ready" phases
+    // AGENT FIX: Purge existing listeners to prevent memory leaks and duplicate callbacks
+    ipcRenderer.removeAllListeners('install-status');
     ipcRenderer.on('install-status', (event, data) => callback(data));
   },
   onProgressUpdate: (callback) => {
-    // Used for the actual MB/s and extraction percentages
+    ipcRenderer.removeAllListeners('progress-update');
     ipcRenderer.on('progress-update', (event, data) => callback(data));
   },
 
   // 🎨 System Accent Color (Requested securely from Main)
   getSystemAccent: () => ipcRenderer.invoke('get-system-accent'),
   onAccentChange: (callback) => {
+    ipcRenderer.removeAllListeners('accent-color-changed');
     ipcRenderer.on('accent-color-changed', (event, color) => callback(color));
   },
 

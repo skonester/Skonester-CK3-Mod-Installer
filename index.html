@@ -6,28 +6,21 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 /* Chromium Bleeding Edge + Vulkan Optimized */
-* { 
-    margin: 0; 
-    padding: 0; 
-    box-sizing: border-box; 
-}
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
-  /* 🌟 Chromium 140+ Vulkan rendering */
-  --accent: #ff6b6b;
-  --system-accent: rgba(255,107,107,0.15);
-  --glass-bg: rgba(20,20,25,0.92);
-  --glass-border: rgba(80,85,90,0.4);
-  accent-color: var(--accent);
-  caret-color: var(--accent);
-  scrollbar-gutter: stable both-edges;
-  scrollbar-width: thin;
-  scrollbar-color: var(--accent) transparent;
-  
-  /* Vulkan compositor hints */
-  transform-style: preserve-3d;
-  perspective: 1000px;
-  will-change: transform, opacity;
+    --accent: #ff6b6b;
+    --system-accent: rgba(255,107,107,0.15);
+    --glass-bg: rgba(20,20,25,0.92);
+    --glass-border: rgba(80,85,90,0.4);
+    accent-color: var(--accent);
+    caret-color: var(--accent);
+    scrollbar-gutter: stable both-edges;
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent) transparent;
+    transform-style: preserve-3d;
+    perspective: 1000px;
+    will-change: transform, opacity;
 }
 
 body {
@@ -45,52 +38,31 @@ body {
     align-items: center;
     padding: 20px;
     overflow-x: hidden;
-    -webkit-app-region: no-drag; /* FIX: Allows global drag-and-drop */
+    -webkit-app-region: no-drag;
 }
 
-/* 🎯 DRAG AND DROP OVERLAY */
+/* DRAG AND DROP OVERLAY */
 #drop-overlay {
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
     background: rgba(20, 20, 25, 0.85);
     backdrop-filter: blur(12px);
     z-index: 9999;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    pointer-events: none;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; /* AGENT FIX: Must remain none to prevent event interception */
     transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
-
 #drop-overlay .drop-box {
-    border: 3px dashed var(--accent);
-    border-radius: 24px;
-    padding: 60px;
-    text-align: center;
+    border: 3px dashed var(--accent); border-radius: 24px;
+    padding: 60px; text-align: center;
     background: rgba(255, 107, 107, 0.05);
     transform: scale(0.95);
     transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
+body.drag-active #drop-overlay { opacity: 1; }
+body.drag-active #drop-overlay .drop-box { transform: scale(1); box-shadow: 0 0 50px rgba(255, 107, 107, 0.2); }
+.drop-title { font-size: 2.5rem; font-weight: 800; color: var(--accent); margin-bottom: 10px; }
 
-body.drag-active #drop-overlay {
-    opacity: 1;
-    pointer-events: all; /* FIX: Forces overlay to catch dropped file */
-}
-
-body.drag-active #drop-overlay .drop-box {
-    transform: scale(1);
-    box-shadow: 0 0 50px rgba(255, 107, 107, 0.2);
-}
-
-.drop-title {
-    font-size: 2.5rem;
-    font-weight: 800;
-    color: var(--accent);
-    margin-bottom: 10px;
-}
-
-/* Titlebar - Chromium frameless */
+/* Titlebar & Container */
 .titlebar-drag { -webkit-app-region: drag; }
 .titlebar-nodrag { -webkit-app-region: no-drag; }
 
@@ -100,341 +72,120 @@ body.drag-active #drop-overlay .drop-box {
     -webkit-backdrop-filter: saturate(180%) blur(32px) brightness(1.05);
     border: 1px solid var(--glass-border);
     border-radius: 24px;
-    box-shadow: 
-        0 25px 50px -12px rgba(0,0,0,0.5),
-        0 0 0 1px rgba(255,255,255,0.05),
-        inset 0 1px 0 rgba(255,255,255,0.1);
-    width: 100%; 
-    max-width: 640px; 
-    margin-bottom: 24px;
-    position: relative;
-    overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05), inset 0 1px 0 rgba(255,255,255,0.1);
+    width: 100%; max-width: 640px; margin-bottom: 24px;
+    position: relative; overflow: hidden;
 }
 
-/* Shimmer effect - Vulkan GPU accelerated */
 .header::before {
-    content: '';
-    position: absolute;
-    top: -50%; left: -50%; 
-    width: 200%; height: 200%;
+    content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
     background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-    transform: skewX(-25deg);
-    animation: shimmer 3s infinite;
-    opacity: 0;
-    transition: opacity 0.4s ease;
-    pointer-events: none;
+    transform: skewX(-25deg); animation: shimmer 3s infinite; opacity: 0; transition: opacity 0.4s ease; pointer-events: none;
 }
-
 .header:hover::before { opacity: 1; }
+@keyframes shimmer { 0% { transform: translateX(-100%) skewX(-25deg); } 100% { transform: translateX(100%) skewX(-25deg); } }
 
-@keyframes shimmer {
-    0% { transform: translateX(-100%) skewX(-25deg); }
-    100% { transform: translateX(100%) skewX(-25deg); }
-}
-
-.header { 
-    text-align: center; 
-    padding: 40px 32px;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.header:hover {
-    transform: translateY(-4px) scale(1.02);
-}
-
-.container { 
-    padding: 48px 40px; 
-    transition: all 0.3s ease;
-}
+.header { text-align: center; padding: 40px 32px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+.header:hover { transform: translateY(-4px) scale(1.02); }
+.container { padding: 48px 40px; transition: all 0.3s ease; }
 
 .title { 
-    font-size: 2.4rem; 
-    font-weight: 800; 
-    background: linear-gradient(135deg, var(--accent), #ff8e8e, #ffb3b3);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin-bottom: 12px; 
-    letter-spacing: -0.02em;
-    text-shadow: 0 4px 20px rgba(255,107,107,0.3);
+    font-size: 2.4rem; font-weight: 800; margin-bottom: 12px; letter-spacing: -0.02em; text-shadow: 0 4px 20px rgba(255,107,107,0.3);
+    background: linear-gradient(135deg, var(--accent), #ff8e8e, #ffb3b3); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
-.subtitle { 
-    font-size: 1.1rem; 
-    color: rgba(184,184,184,0.8); 
-    font-weight: 400;
-    letter-spacing: 0.5px;
+.subtitle { font-size: 1.1rem; color: rgba(184,184,184,0.8); font-weight: 400; letter-spacing: 0.5px; }
+
+/* Window Controls */
+.tb-btn {
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; 
+    font-size: 14px; padding: 8px 12px; cursor: pointer; backdrop-filter: blur(20px); transition: all 0.2s ease;
+    min-width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
 }
+.tb-btn:hover { background: rgba(255,255,255,0.2); transform: scale(1.05); }
+.tb-btn.close { background: rgba(255,100,100,0.2); border-color: rgba(255,100,100,0.4); }
+.tb-btn.close:hover { background: rgba(255,70,70,0.8); }
 
 /* Sections */
-.section { 
-    margin-bottom: 40px; 
-    opacity: 0;
-    animation: fadeInUp 0.6s ease forwards;
-}
-.section:nth-child(1) { animation-delay: 0.1s; }
-.section:nth-child(2) { animation-delay: 0.2s; }
-.section:nth-child(3) { animation-delay: 0.3s; }
+.section { margin-bottom: 40px; opacity: 0; animation: fadeInUp 0.6s ease forwards; }
+.section:nth-child(1) { animation-delay: 0.1s; } .section:nth-child(2) { animation-delay: 0.2s; } .section:nth-child(3) { animation-delay: 0.3s; }
+@keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
 
-@keyframes fadeInUp {
-    to { opacity: 1; transform: translateY(0); }
-}
+.section-title { font-size: 1.3rem; font-weight: 700; color: #f8f9ff; margin-bottom: 20px; position: relative; }
+.section-title::after { content: ''; position: absolute; bottom: -6px; left: 0; width: 40px; height: 3px; background: linear-gradient(90deg, var(--accent), transparent); border-radius: 2px; }
 
-.section-title { 
-    font-size: 1.3rem; 
-    font-weight: 700; 
-    color: #f8f9ff;
-    margin-bottom: 20px;
-    position: relative;
-}
-.section-title::after {
-    content: '';
-    position: absolute;
-    bottom: -6px; left: 0;
-    width: 40px; height: 3px;
-    background: linear-gradient(90deg, var(--accent), transparent);
-    border-radius: 2px;
-}
-
-/* Chromium 140+ Input Perfection */
+/* Inputs & Buttons */
 .input-field { 
-    background: 
-        linear-gradient(145deg, rgba(58,58,65,0.8) 0%, rgba(42,42,48,0.9) 100%),
-        rgba(255,255,255,0.02);
-    backdrop-filter: blur(16px);
-    color: #ffffff; 
-    border: 1.5px solid rgba(255,107,107,0.2); 
-    padding: 20px 24px; 
-    width: 100%; 
-    border-radius: 20px; 
-    font-size: 1rem; 
-    font-weight: 500; 
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    margin-bottom: 16px;
-    position: relative;
-    overflow: hidden;
+    background: linear-gradient(145deg, rgba(58,58,65,0.8) 0%, rgba(42,42,48,0.9) 100%), rgba(255,255,255,0.02);
+    backdrop-filter: blur(16px); color: #ffffff; border: 1.5px solid rgba(255,107,107,0.2); 
+    padding: 20px 24px; width: 100%; border-radius: 20px; font-size: 1rem; font-weight: 500; 
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); margin-bottom: 16px; position: relative; overflow: hidden;
 }
-.input-field::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: linear-gradient(90deg, transparent 0%, rgba(255,107,107,0.05) 50%, transparent 100%);
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-.input-field:focus { 
-    outline: none; 
-    border-color: var(--accent); 
-    box-shadow: 
-        0 0 0 4px rgba(255,107,107,0.15),
-        0 8px 32px rgba(255,107,107,0.2);
-    transform: translateY(-2px);
-}
+.input-field::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(90deg, transparent 0%, rgba(255,107,107,0.05) 50%, transparent 100%); opacity: 0; transition: opacity 0.3s ease; }
+.input-field:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px rgba(255,107,107,0.15), 0 8px 32px rgba(255,107,107,0.2); transform: translateY(-2px); }
 .input-field:focus::before { opacity: 1; }
 .input-field::placeholder { color: rgba(170,170,180,0.6); }
 
-/* Vulkan Button Perfection */
 .btn { 
-    background: 
-        linear-gradient(145deg, rgba(74,74,80,0.8) 0%, rgba(51,51,60,0.9) 100%),
-        rgba(255,255,255,0.02);
-    backdrop-filter: blur(20px);
-    color: #ffffff;
-    border: 1.5px solid rgba(255,107,107,0.25); 
-    padding: 20px 28px; 
-    width: 100%;
-    border-radius: 20px; 
-    font-size: 1rem; 
-    font-weight: 600; 
-    cursor: pointer;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); 
-    box-shadow: 
-        0 12px 28px rgba(0,0,0,0.4),
-        inset 0 1px 0 rgba(255,255,255,0.1);
-    margin-bottom: 12px;
-    position: relative;
-    overflow: hidden;
+    background: linear-gradient(145deg, rgba(74,74,80,0.8) 0%, rgba(51,51,60,0.9) 100%), rgba(255,255,255,0.02);
+    backdrop-filter: blur(20px); color: #ffffff; border: 1.5px solid rgba(255,107,107,0.25); 
+    padding: 20px 28px; width: 100%; border-radius: 20px; font-size: 1rem; font-weight: 600; cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 12px 28px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1);
+    margin-bottom: 12px; position: relative; overflow: hidden;
 }
-
-.btn::before {
-    content: '';
-    position: absolute;
-    top: 0; left: -100%;
-    width: 100%; height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-    transition: left 0.5s;
-}
+.btn::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent); transition: left 0.5s; }
 .btn:hover:not(:disabled)::before { left: 100%; }
-
 .btn:hover:not(:disabled) { 
-    background: 
-        linear-gradient(145deg, rgba(90,90,95,0.9) 0%, rgba(68,68,75,0.95) 100%),
-        rgba(255,255,255,0.05);
-    box-shadow: 
-        0 20px 40px rgba(0,0,0,0.5),
-        0 0 0 1px rgba(255,107,107,0.3),
-        inset 0 1px 0 rgba(255,255,255,0.15);
+    background: linear-gradient(145deg, rgba(90,90,95,0.9) 0%, rgba(68,68,75,0.95) 100%), rgba(255,255,255,0.05);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,107,107,0.3), inset 0 1px 0 rgba(255,255,255,0.15);
     transform: translateY(-3px) scale(1.02);
 }
+.btn:disabled { background: rgba(42,42,48,0.6); cursor: not-allowed; opacity: 0.5; transform: none; }
+.btn.primary { background: linear-gradient(145deg, #4a90e2 0%, #357abd 100%), rgba(255,255,255,0.1); border-color: rgba(74,144,226,0.4); }
+.btn.primary:hover:not(:disabled) { background: linear-gradient(145deg, #5aa0f2 0%, #4d8fd2 100%), rgba(255,255,255,0.15); }
+.btn.auto { background: linear-gradient(145deg, #f39c12 0%, #e67e22 100%), rgba(255,255,255,0.1); border-color: rgba(243,156,18,0.4); }
+.btn.auto:hover:not(:disabled) { background: linear-gradient(145deg, #f7b549 0%, #f39c12 100%), rgba(255,255,255,0.15); }
 
-.btn:disabled { 
-    background: rgba(42,42,48,0.6); 
-    cursor: not-allowed; 
-    opacity: 0.5; 
-    transform: none;
+/* AGENT FIX: Extracted Install Button Styles to resolve CSS Specificity Conflict on disabled state */
+.btn-install {
+    font-size: 1.2rem; font-weight: 700; margin-top: 12px; padding: 24px 32px;
+    background: linear-gradient(145deg, var(--accent) 0%, #ff5252 100%);
+    border-color: rgba(255,107,107,0.6); box-shadow: 0 16px 40px rgba(255,107,107,0.4);
 }
-
-.btn.primary { 
-    background: 
-        linear-gradient(145deg, #4a90e2 0%, #357abd 100%),
-        rgba(255,255,255,0.1);
-    border-color: rgba(74,144,226,0.4); 
+.btn-install:disabled {
+    background: rgba(42,42,48,0.6); border-color: rgba(255,107,107,0.2); box-shadow: none;
 }
-.btn.primary:hover:not(:disabled) { 
-    background: 
-        linear-gradient(145deg, #5aa0f2 0%, #4d8fd2 100%),
-        rgba(255,255,255,0.15);
-}
-
-.btn.auto { 
-    background: 
-        linear-gradient(145deg, #f39c12 0%, #e67e22 100%),
-        rgba(255,255,255,0.1);
-    border-color: rgba(243,156,18,0.4); 
-}
-.btn.auto:hover:not(:disabled) { 
-    background: 
-        linear-gradient(145deg, #f7b549 0%, #f39c12 100%),
-        rgba(255,255,255,0.15);
+.btn-install:hover:not(:disabled) {
+    background: linear-gradient(145deg, #ff8e8e 0%, #ff5252 100%);
 }
 
-/* Status with glassmorphism */
+/* Status & Layout */
 .status { 
-    background: rgba(30,30,35,0.9); 
-    backdrop-filter: blur(24px);
-    padding: 24px; 
-    border-radius: 20px; 
-    text-align: center;
-    font-weight: 600; 
-    border: 1px solid rgba(60,60,65,0.5); 
-    min-height: 90px; 
-    transition: all 0.3s ease;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+    background: rgba(30,30,35,0.9); backdrop-filter: blur(24px); padding: 24px; border-radius: 20px; 
+    text-align: center; font-weight: 600; border: 1px solid rgba(60,60,65,0.5); min-height: 90px; 
+    transition: all 0.3s ease; box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
 }
-
-.status.success { 
-    background: rgba(40,170,100,0.15); 
-    border-color: rgba(100,200,120,0.4); 
-    color: #c8e6c8;
-    box-shadow: 
-        0 0 0 1px rgba(100,200,120,0.3),
-        inset 0 1px 0 rgba(255,255,255,0.2);
+.status.success { background: rgba(40,170,100,0.15); border-color: rgba(100,200,120,0.4); color: #c8e6c8; box-shadow: 0 0 0 1px rgba(100,200,120,0.3), inset 0 1px 0 rgba(255,255,255,0.2); }
+.info { font-size: 1rem; margin: 16px 0; color: rgba(200,200,210,0.9); font-weight: 500; }
+.path-display, .mod-preview { 
+    background: rgba(0,0,0,0.6); backdrop-filter: blur(12px); padding: 16px; border-radius: 12px; 
+    font-family: 'SF Mono', Monaco, monospace; font-size: 0.9rem; word-break: break-all; margin-top: 12px; border: 1px solid rgba(255,107,107,0.2);
 }
-
-/* Info & Path */
-.info { 
-    font-size: 1rem; 
-    margin: 16px 0; 
-    color: rgba(200,200,210,0.9); 
-    font-weight: 500;
-}
-.path-display { 
-    background: rgba(0,0,0,0.6); 
-    backdrop-filter: blur(12px);
-    padding: 16px; 
-    border-radius: 12px; 
-    font-family: 'SF Mono', Monaco, monospace; 
-    font-size: 0.9rem; 
-    word-break: break-all; 
-    margin-top: 12px;
-    border: 1px solid rgba(255,107,107,0.2);
-}
-
-/* Mod Preview */
-.mod-preview { 
-    background: rgba(25,25,30,0.95); 
-    backdrop-filter: blur(20px);
-    padding: 28px; 
-    border-radius: 20px; 
-    font-family: 'SF Mono', Monaco, monospace;
-    font-size: 0.9rem; 
-    border-left: 5px solid #00ff88; 
-    margin: 28px 0; 
-    line-height: 1.7;
-    border: 1px solid rgba(60,60,65,0.5);
-    box-shadow: inset 0 1px 0 rgba(0,255,136,0.1);
-}
+.mod-preview { background: rgba(25,25,30,0.95); padding: 28px; border-left: 5px solid #00ff88; margin: 28px 0; line-height: 1.7; border-color: rgba(60,60,65,0.5); box-shadow: inset 0 1px 0 rgba(0,255,136,0.1); }
 .mod-preview code { color: #e0e7ff; }
+.status-icon { font-size: 1.6rem; margin-right: 12px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); }
 
-/* Status icons */
-.status-icon { 
-    font-size: 1.6rem; 
-    margin-right: 12px; 
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
-}
+/* Progress */
+.progress-wrapper { display: none; background: rgba(25,25,30,0.6); padding: 20px; border-radius: 16px; margin: 24px 0; border: 1px solid rgba(255,107,107,0.15); }
+.progress-header, .progress-footer { display: flex; justify-content: space-between; }
+.progress-header { font-size: 0.95rem; margin-bottom: 12px; color: #e0e7ff; font-weight: 500; }
+.progress-footer { font-size: 0.85rem; margin-top: 12px; color: rgba(184,184,184,0.8); font-family: 'SF Mono', Monaco, monospace; }
+.progress-track { width: 100%; height: 12px; background: rgba(0,0,0,0.6); border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); box-shadow: inset 0 2px 4px rgba(0,0,0,0.5); }
+.progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), #ff8e8e); transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 10px rgba(255,107,107,0.5); }
 
-/* Progress Container Styles */
-.progress-wrapper {
-    display: none;
-    background: rgba(25,25,30,0.6);
-    padding: 20px;
-    border-radius: 16px;
-    margin-top: 24px;
-    margin-bottom: 24px;
-    border: 1px solid rgba(255,107,107,0.15);
-}
-
-.progress-header {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.95rem;
-    margin-bottom: 12px;
-    color: #e0e7ff;
-    font-weight: 500;
-}
-
-.progress-track {
-    width: 100%;
-    height: 12px;
-    background: rgba(0,0,0,0.6);
-    border-radius: 8px;
-    overflow: hidden;
-    border: 1px solid rgba(255,255,255,0.05);
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
-}
-
-.progress-fill {
-    height: 100%;
-    width: 0%;
-    background: linear-gradient(90deg, var(--accent), #ff8e8e);
-    transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 0 10px rgba(255,107,107,0.5);
-}
-
-.progress-footer {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.85rem;
-    margin-top: 12px;
-    color: rgba(184,184,184,0.8);
-    font-family: 'SF Mono', Monaco, monospace;
-}
-
-/* Responsive */
-@media (max-width: 680px) { 
-    .container, .header { 
-        margin: 0 12px; 
-        padding: 36px 28px; 
-    } 
-    .title { font-size: 2rem; }
-    body { padding: 12px; }
-}
-
-/* Vulkan scrollbars */
+@media (max-width: 680px) { .container, .header { margin: 0 12px; padding: 36px 28px; } .title { font-size: 2rem; } body { padding: 12px; } }
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 4px; }
-::-webkit-scrollbar-thumb { 
-    background: linear-gradient(var(--accent), rgba(255,107,107,0.5)); 
-    border-radius: 4px; 
-}
+::-webkit-scrollbar-thumb { background: linear-gradient(var(--accent), rgba(255,107,107,0.5)); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 </style>
 </head>
@@ -449,70 +200,31 @@ body.drag-active #drop-overlay .drop-box {
 
 <div class="header titlebar-drag">
     <div class="titlebar-nodrag" style="position: absolute; top: 12px; right: 16px; display: flex; gap: 8px; z-index: 10;">
-        <button onclick="app.minimize()" style="
-            background: rgba(255,255,255,0.1); 
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 8px;
-            color: #fff; 
-            font-size: 14px; 
-            padding: 8px 12px; 
-            cursor: pointer; 
-            backdrop-filter: blur(20px);
-            transition: all 0.2s ease;
-            min-width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
-        " onmouseover="this.style.background='rgba(255,255,255,0.2)'; this.style.transform='scale(1.05)'" 
-        onmouseout="this.style.background='rgba(255,255,255,0.1)'; this.style.transform='scale(1)'">-</button>
-        
-        <button onclick="app.maximize()" style="
-            background: rgba(255,255,255,0.1); 
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 8px;
-            color: #fff; 
-            font-size: 14px; 
-            padding: 8px 12px; 
-            cursor: pointer; 
-            backdrop-filter: blur(20px);
-            transition: all 0.2s ease;
-            min-width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
-        " onmouseover="this.style.background='rgba(255,255,255,0.2)'; this.style.transform='scale(1.05)'" 
-        onmouseout="this.style.background='rgba(255,255,255,0.1)'; this.style.transform='scale(1)'">□</button>
-        
-        <button onclick="app.close()" style="
-            background: rgba(255,100,100,0.2); 
-            border: 1px solid rgba(255,100,100,0.4);
-            border-radius: 8px;
-            color: #fff; 
-            font-size: 14px; 
-            padding: 8px 12px; 
-            cursor: pointer; 
-            backdrop-filter: blur(20px);
-            transition: all 0.2s ease;
-            min-width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
-        " onmouseover="this.style.background='rgba(255,70,70,0.8)'; this.style.transform='scale(1.05)'" 
-        onmouseout="this.style.background='rgba(255,100,100,0.2)'; this.style.transform='scale(1)'">✕</button>
+        <button onclick="app.minimize()" class="tb-btn">-</button>
+        <button onclick="app.maximize()" class="tb-btn">□</button>
+        <button onclick="app.close()" class="tb-btn close">✕</button>
     </div>
     <h1 class="title">🛠️ Skonester</h1>
-    <p class="subtitle">CK3 Mod Installer • March 17th 2026</p>
+    <p class="subtitle">CK3 Mod Installer • March 31st 2026</p>
 </div>
 
 <div class="container">
     <div class="section">
         <h3 class="section-title">📦 1. Select Mod ZIP</h3>
         <button id="zipBtn" class="btn">📥 Choose ZIP File</button>
-        <div id="zipInfo" class="info">Or simply drag & drop the ZIP anywhere!</div>
+        <div id="zipInfo" class="info">Or simply drag & drop the ZIP anywhere</div>
     </div>
 
     <div class="section">
         <h3 class="section-title">⚙️ 2. Mod Details</h3>
-        <input id="modName" class="input-field" placeholder="Mod Name (e.g. Mod Name)" value="Any">
-        <input id="modId" class="input-field" placeholder="Mod ID (Steam Workshop ID)" value="0">
-        <input id="modVersion" class="input-field" placeholder="Version (e.g. 1.18.4)" value="1.18.4">
+        <input id="modName" class="input-field" placeholder="Mod Name" value="Mod Name">
+        <input id="modId" class="input-field" placeholder="Mod ID" value="0">
+        <input id="modVersion" class="input-field" placeholder="Version" value="1.19">
     </div>
 
     <div class="section">
         <h3 class="section-title">📁 3. Select Mods Folder</h3>
-        <p class="info"><strong>Navigate to:</strong><br>
-        <code>Documents → Paradox Interactive → Crusader Kings III → mod</code></p>
+        <p class="info"><strong>Navigate to:</strong><br><code>Documents → Paradox Interactive → Crusader Kings III → mod</code></p>
         <button id="autoDetectBtn" class="btn auto">🔍 AUTO-DETECT FOLDER</button>
         <button id="folderBtn" class="btn primary">📂 SELECT MANUALLY</button>
         <div id="folderInfo" class="info"></div>
@@ -520,286 +232,145 @@ body.drag-active #drop-overlay .drop-box {
     </div>
 
     <div class="mod-preview" id="modPreview">
-        <strong>Will create <span id="previewFilename">mod1,etc.mod</span>:</strong><br>
-        <code id="previewContent">
-name="My Mod"<br>
-path="mod/[Mod]"<br>
-remote_file_id="0"<br>
-version="1.18.4"<br>
-tags={ "1.18 \"Crane\"" }
-        </code>
+        <strong>Will create if not defined <span id="previewFilename">mod1,etc.mod</span>:</strong><br>
+        <code id="previewContent"></code>
     </div>
 
     <div id="progressContainer" class="progress-wrapper">
-        <div class="progress-header">
-            <span id="progressFiles">Preparing files...</span>
-            <span id="progressPercent">0%</span>
-        </div>
-        <div class="progress-track">
-            <div id="progressFill" class="progress-fill"></div>
-        </div>
-        <div class="progress-footer">
-            <span id="progressSize">0 MB</span>
-            <span><span id="progressSpeed">0 MB/s</span> | ETA: <span id="progressETA">--</span></span>
-        </div>
+        <div class="progress-header"><span id="progressFiles">Preparing files...</span><span id="progressPercent">0%</span></div>
+        <div class="progress-track"><div id="progressFill" class="progress-fill"></div></div>
+        <div class="progress-footer"><span id="progressSize">0 MB</span><span><span id="progressSpeed">0 MB/s</span> | ETA: <span id="progressETA">--</span></span></div>
     </div>
 
-    <button id="installBtn" class="btn" disabled style="
-        font-size: 1.2rem; 
-        font-weight: 700; 
-        margin-top: 12px; 
-        padding: 24px 32px;
-        background: linear-gradient(145deg, var(--accent) 0%, #ff5252 100%);
-        border-color: rgba(255,107,107,0.6);
-        box-shadow: 0 16px 40px rgba(255,107,107,0.4);
-    ">
+    <button id="installBtn" class="btn btn-install" disabled>
         ⚡ INSTALL MOD
     </button>
 
-    <div id="status" class="status" style="margin-top: 24px;">
-        <span class="status-icon">1️⃣</span> Select ZIP file first
-    </div>
+    <div id="status" class="status" style="margin-top: 24px;"><span class="status-icon">1️⃣</span> Select ZIP file first</div>
 </div>
 
 <script src="preload.js"></script>
 <script>
-let zipFile = null;
-let folderPath = null;
-let modData = { modId: '3398662167', modName: 'Skonester Cheat Menu', version: '1.18.4' };
+const $ = id => document.getElementById(id);
+let zipFile = null, folderPath = null, modData = { modId: '3398662167', modName: 'Skonester Cheat Menu', version: '1.19' };
 
-// Smooth entrance animation
 document.addEventListener('DOMContentLoaded', () => {
-    document.body.style.opacity = '0';
-    document.body.style.transform = 'translateY(20px)';
+    document.body.style.opacity = '0'; document.body.style.transform = 'translateY(20px)';
     document.body.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
-    setTimeout(() => {
-        document.body.style.opacity = '1';
-        document.body.style.transform = 'translateY(0)';
-    }, 100);
+    setTimeout(() => { document.body.style.opacity = '1'; document.body.style.transform = 'translateY(0)'; }, 100);
 });
 
-// MOD INPUT HANDLERS
-document.getElementById('modName').oninput = updateModData;
-document.getElementById('modId').oninput = updateModData;
-document.getElementById('modVersion').oninput = updateModData;
+['modName', 'modId', 'modVersion'].forEach(id => $(id).oninput = updateModData);
 
 function updateModData() {
-    modData.modName = document.getElementById('modName').value || 'Custom Mod';
-    modData.modId = document.getElementById('modId').value || 'custom';
-    modData.version = document.getElementById('modVersion').value || '1.18.4';
-    
-    document.getElementById('previewFilename').textContent = modData.modId + '.mod';
-    document.getElementById('previewContent').innerHTML = 
-        `name="${modData.modName}"<br>` +
-        `path="mod/[ZIP_FOLDER_NAME]"<br>` +
-        `remote_file_id="${modData.modId}"<br>` +
-        `version="${modData.version}"<br>` +
-        `tags={ "1.18 \\"Crane\\"" }`;
-    
+    modData = { modName: $('modName').value || 'Custom Mod', modId: $('modId').value || 'custom', version: $('modVersion').value || '1.19' };
+    $('previewFilename').textContent = `${modData.modId}.mod`;
+    $('previewContent').innerHTML = `name="${modData.modName}"<br>path="mod/[ZIP_FOLDER_NAME]"<br>remote_file_id="${modData.modId}"<br>version="${modData.version}"<br>tags={ "1.19 \\"Scribe\\"" }`;
     checkReady();
 }
 
-// 🎯 GLOBAL DRAG AND DROP LOGIC
-let dragCounter = 0;
-
-['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-    window.addEventListener(eventName, (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-    }, false);
-});
-
-window.addEventListener('dragenter', (e) => {
-    dragCounter++;
+// AGENT FIX: Refactored Drag & Drop logic to prevent event bubbling/flicker state drops
+window.addEventListener('dragover', e => {
+    e.preventDefault();
     document.body.classList.add('drag-active');
 });
 
-window.addEventListener('dragleave', (e) => {
-    dragCounter--;
-    if (dragCounter <= 0) {
-        dragCounter = 0;
+window.addEventListener('dragleave', e => {
+    e.preventDefault();
+    if (!e.clientX && !e.clientY) {
         document.body.classList.remove('drag-active');
     }
 });
 
-// Handle the actual drop (With Hybrid Auto-Detect)
-window.addEventListener('drop', async (e) => {
-    dragCounter = 0;
+window.addEventListener('drop', async e => {
+    e.preventDefault();
     document.body.classList.remove('drag-active');
     
+    if (!e.dataTransfer || !e.dataTransfer.files || e.dataTransfer.files.length === 0) return;
     const file = e.dataTransfer.files[0];
-    
-    if (file && (file.name.toLowerCase().endsWith('.zip') || file.name.toLowerCase().endsWith('.7z') || file.name.toLowerCase().endsWith('.rar'))) {
-        zipFile = file.path;
+
+    if (/\.(zip|7z|rar)$/i.test(file.name)) {
+        // Fallback to name if electron path is restricted
+        zipFile = file.path || file.name; 
+        setHTML('zipInfo', `✅ <strong>${file.name}</strong> loaded via Drag & Drop`, '#c8e6c8');
         
-        const info = document.getElementById('zipInfo');
-        info.innerHTML = `✅ <strong>${file.name}</strong> loaded via Drag & Drop`;
-        info.style.color = '#c8e6c8';
-        
-        // Auto-fill mod name if it still says "Any" or is blank
-        const modNameInput = document.getElementById('modName');
-        if(modNameInput.value === 'Any' || modNameInput.value === '') {
-            modNameInput.value = file.name.replace(/\.(zip|7z|rar)$/i, '');
-            updateModData();
+        if ($('modName').value === 'Any' || !$('modName').value.trim()) { 
+            $('modName').value = file.name.replace(/\.(zip|7z|rar)$/i, ''); 
+            updateModData(); 
         }
         
-        // 🌟 HYBRID LOGIC: Auto-detect folder on drop if missing
-        if (!folderPath) {
-            const status = document.getElementById('status');
-            status.innerHTML = '<span class="status-icon">🔍</span> Auto-detecting CK3 folder...';
-            
-            try {
-                const detectedPath = await window.app.autoDetectCK3ModsFolder();
-                if (detectedPath) {
-                    folderPath = detectedPath;
-                    
-                    document.getElementById('folderPathDisplay').textContent = folderPath;
-                    document.getElementById('folderPathDisplay').style.display = 'block';
-                    document.getElementById('folderInfo').innerHTML = `✅ <strong>Auto-detected:</strong> ${folderPath.split(/[\\/]/).pop()}`;
-                    document.getElementById('folderInfo').style.color = '#c8e6c8';
-                }
-            } catch(err) {
-                console.log("Silent auto-detect failed. User must select manually.");
-            }
-        }
-        
+        // Await auto-detect before completing the check loop
+        if (!folderPath) await triggerAutoDetect(true);
         updateStatus();
         checkReady();
     } else {
-        const info = document.getElementById('zipInfo');
-        info.innerHTML = `❌ <strong>Please drop a valid ZIP, RAR, or 7Z file.</strong>`;
-        info.style.color = '#ffb3b3';
+        setHTML('zipInfo', `❌ <strong>Please drop a valid ZIP, RAR, or 7Z file.</strong>`, '#ffb3b3');
     }
 });
 
-// ZIP SELECTION (Manual)
-document.getElementById('zipBtn').onclick = async () => {
+$('zipBtn').onclick = async () => {
     try {
-        const selectedPath = await window.app.pickZip();
-        if (selectedPath) {
-            zipFile = selectedPath;
-            const info = document.getElementById('zipInfo');
-            info.innerHTML = `✅ <strong>${zipFile.split(/[\\/]/).pop()}</strong> loaded`;
-            info.style.color = '#c8e6c8';
-            updateStatus();
-            checkReady();
-        }
-    } catch(e) {
-        document.getElementById('zipInfo').innerHTML = `❌ <strong>${e.message}</strong>`;
-        document.getElementById('zipInfo').style.color = '#ffb3b3';
-    }
+        const path = await window.app.pickZip();
+        if (path) { zipFile = path; setHTML('zipInfo', `✅ <strong>${zipFile.split(/[\\/]/).pop()}</strong> loaded`, '#c8e6c8'); updateStatus(); checkReady(); }
+    } catch(e) { setHTML('zipInfo', `❌ <strong>${e.message}</strong>`, '#ffb3b3'); }
 };
 
-// AUTO-DETECT
-document.getElementById('autoDetectBtn').onclick = async () => {
-    const status = document.getElementById('status');
-    status.innerHTML = '<span class="status-icon">🔍</span> Auto-detecting CK3 folder...';
-    
+const triggerAutoDetect = async (silent = false) => {
+    if (!silent) setHTML('status', '<span class="status-icon">🔍</span> Auto-detecting CK3 folder...');
     try {
-        folderPath = await window.app.autoDetectCK3ModsFolder();
-        if (folderPath) {
-            document.getElementById('folderPathDisplay').textContent = folderPath;
-            document.getElementById('folderPathDisplay').style.display = 'block';
-            document.getElementById('folderInfo').innerHTML = `✅ <strong>Auto-detected:</strong> ${folderPath.split(/[\\/]/).pop()}`;
-            document.getElementById('folderInfo').style.color = '#c8e6c8';
-        } else {
-            throw new Error('CK3 mods folder not found');
-        }
+        const detectedPath = await window.app.autoDetectCK3ModsFolder();
+        if (detectedPath) {
+            folderPath = detectedPath;
+            $('folderPathDisplay').textContent = folderPath; $('folderPathDisplay').style.display = 'block';
+            setHTML('folderInfo', `✅ <strong>Auto-detected:</strong> ${folderPath.split(/[\\/]/).pop()}`, '#c8e6c8');
+        } else if (!silent) throw new Error('CK3 mods folder not found');
     } catch(e) {
-        status.innerHTML = `<span class="status-icon">⚠️</span> ${e.message}<br><small>Select folder manually instead</small>`;
-        document.getElementById('folderInfo').innerHTML = 'ℹ️ <strong>Use manual selection</strong>';
-        document.getElementById('folderInfo').style.color = '#f39c12';
-        return;
+        if (!silent) { setHTML('status', `<span class="status-icon">⚠️</span> ${e.message}<br><small>Select folder manually instead</small>`); setHTML('folderInfo', 'ℹ️ <strong>Use manual selection</strong>', '#f39c12'); }
     }
-    updateStatus();
-    checkReady();
+    if (!silent) { updateStatus(); checkReady(); }
 };
 
-// MANUAL FOLDER
-document.getElementById('folderBtn').onclick = async () => {
+$('autoDetectBtn').onclick = () => triggerAutoDetect(false);
+
+$('folderBtn').onclick = async () => {
     try {
-        const selectedPath = await window.app.pickFolder();
-        if (selectedPath) {
-            folderPath = selectedPath;
-            document.getElementById('folderPathDisplay').textContent = folderPath;
-            document.getElementById('folderPathDisplay').style.display = 'block';
-            document.getElementById('folderInfo').innerHTML = `✅ <strong>${folderPath.split(/[\\/]/).pop()}</strong>`;
-            document.getElementById('folderInfo').style.color = '#c8e6c8';
-            updateStatus();
-            checkReady();
-        }
-    } catch(e) {
-        document.getElementById('folderInfo').innerHTML = `❌ <strong>${e.message}</strong>`;
-        document.getElementById('folderInfo').style.color = '#ffb3b3';
-    }
+        const path = await window.app.pickFolder();
+        if (path) { folderPath = path; $('folderPathDisplay').textContent = folderPath; $('folderPathDisplay').style.display = 'block'; setHTML('folderInfo', `✅ <strong>${folderPath.split(/[\\/]/).pop()}</strong>`, '#c8e6c8'); updateStatus(); checkReady(); }
+    } catch(e) { setHTML('folderInfo', `❌ <strong>${e.message}</strong>`, '#ffb3b3'); }
 };
 
-// INSTALL
-document.getElementById('installBtn').onclick = async () => {
-    const status = document.getElementById('status');
-    const progressContainer = document.getElementById('progressContainer');
-    
-    status.innerHTML = '<span class="status-icon">🚀</span> Installing mod... Please wait';
-    document.getElementById('installBtn').disabled = true;
-    
-    progressContainer.style.display = 'block';
-    
+$('installBtn').onclick = async () => {
+    setHTML('status', '<span class="status-icon">🚀</span> Installing mod... Please wait');
+    $('installBtn').disabled = true; $('progressContainer').style.display = 'block';
     try {
-        const result = await window.app.install({
-            zipPath: zipFile,
-            folderPath: folderPath,
-            modName: modData.modName,
-            modId: modData.modId,
-            version: modData.version
-        });
-        
-        if (result.success) {
-            status.innerHTML = `<span class="status-icon">✅</span> <strong>${result.message}</strong>`;
-            status.className = 'status success';
-        } else {
-            throw new Error(result.error || 'Installation failed');
-        }
-    } catch(e) {
-        status.innerHTML = `<span class="status-icon">❌</span> <strong>${e.message}</strong>`;
-    } finally {
-        document.getElementById('installBtn').disabled = false;
-    }
+        const res = await window.app.install({ zipPath: zipFile, folderPath, ...modData });
+        if (res.success) { setHTML('status', `<span class="status-icon">✅</span> <strong>${res.message}</strong>`); $('status').className = 'status success'; } 
+        else throw new Error(res.error || 'Installation failed');
+    } catch(e) { setHTML('status', `<span class="status-icon">❌</span> <strong>${e.message}</strong>`); } 
+    finally { $('installBtn').disabled = false; }
 };
 
-function checkReady() {
-    const ready = !!(zipFile && folderPath && modData.modId);
-    document.getElementById('installBtn').disabled = !ready;
-    if (ready) {
-        document.getElementById('installBtn').style.background = 
-            'linear-gradient(145deg, #ff6b6b 0%, #ff5252 100%)';
-    }
+function setHTML(id, html, color) { $(id).innerHTML = html; if (color) $(id).style.color = color; }
+
+function checkReady() { 
+    // AGENT FIX: Stripped inline background mutation. CSS handles disabled state cleanly now.
+    const ready = !!(zipFile && folderPath && modData.modId); 
+    $('installBtn').disabled = !ready; 
 }
 
 function updateStatus() {
-    const status = document.getElementById('status');
-    if (zipFile && folderPath && modData.modId) {
-        status.innerHTML = '<span class="status-icon">✅</span> <strong>Ready!</strong> Click Install to proceed';
-        status.className = 'status success';
-    } else if (zipFile && folderPath) {
-        status.innerHTML = '<span class="status-icon">2️⃣</span> Enter mod ID, name & version';
-    } else if (zipFile) {
-        status.innerHTML = '<span class="status-icon">2️⃣</span> Select or auto-detect mods folder';
-    } else {
-        status.innerHTML = '<span class="status-icon">1️⃣</span> Select ZIP file first';
-    }
+    const s = $('status');
+    if (zipFile && folderPath && modData.modId) { s.innerHTML = '<span class="status-icon">✅</span> <strong>Ready!</strong> Click Install to proceed'; s.className = 'status success'; }
+    else if (zipFile && folderPath) s.innerHTML = '<span class="status-icon">2️⃣</span> Enter mod ID, name & version';
+    else if (zipFile) s.innerHTML = '<span class="status-icon">2️⃣</span> Select or auto-detect mods folder';
+    else s.innerHTML = '<span class="status-icon">1️⃣</span> Select ZIP file first';
 }
 
-// Init
 updateModData();
 
-// Listen for progress updates from main.js
-window.app.onProgressUpdate((data) => {
-  document.getElementById('progressFill').style.width = `${data.percent}%`;
-  document.getElementById('progressPercent').textContent = `${data.percent}%`;
-  document.getElementById('progressSize').textContent = data.size;
-  document.getElementById('progressSpeed').textContent = data.speed;
-  document.getElementById('progressETA').textContent = data.eta;
-  document.getElementById('progressFiles').textContent = data.files;
+window.app.onProgressUpdate(d => {
+    $('progressFill').style.width = $('progressPercent').textContent = `${d.percent}%`;
+    ['Size', 'Speed', 'ETA', 'Files'].forEach(k => $(`progress${k}`).textContent = d[k.toLowerCase()]);
 });
 </script>
 </body>
