@@ -1,19 +1,16 @@
-name: Multi-Platform Build & Release
+name: Multi-Platform Build
 
 on:
   push:
     branches:
       - main
-      - master
-  workflow_dispatch: # Allows manual trigger from GitHub UI
+  workflow_dispatch:
 
 jobs:
   release:
     runs-on: ${{ matrix.os }}
-
     strategy:
       matrix:
-        # AGENT NOTE: Using native runners for each target to ensure build success
         os: [windows-latest, ubuntu-latest, macos-latest]
 
     steps:
@@ -34,15 +31,15 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [ "$RUNNER_OS" == "Windows" ]; then
-            npm run dist:win
+            npx electron-builder --win portable
           elif [ "$RUNNER_OS" == "macOS" ]; then
-            npm run dist:mac
+            npx electron-builder --mac dmg
           else
-            npm run dist:linux
+            npx electron-builder --linux AppImage
           fi
         shell: bash
 
-      - name: Upload Artifacts
+      - name: Upload Binaries to Actions
         uses: actions/upload-artifact@v4
         with:
           name: build-${{ matrix.os }}
