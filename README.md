@@ -1,8 +1,8 @@
-# Skonester CK3 Mod Installer
+# Skonester CK3 Mod Loader & Installer
 
 [![Downloads](https://img.shields.io/github/downloads/skonester/Skonester-CK3-Mod-Installer/total.svg)](https://github.com/skonester/Skonester-CK3-Mod-Installer/releases)
 
-A universal, automated modification installer for Crusader Kings III (Optimized for v1.19 "Scribe").
+A universal, automated modification loader and installer for Crusader Kings III (Optimized for v1.20).
 
 [App Preview](https://htmlpreview.github.io/?https://github.com/skonester/Skonester-CK3-Mod-Installer/blob/main/index.html)
 
@@ -10,17 +10,19 @@ A universal, automated modification installer for Crusader Kings III (Optimized 
 
 ## Features
 
-* **Zero-Config:** Auto-detects the standard mod directory (`Documents/Paradox Interactive/Crusader Kings III/mod`).
-* **Drag & Drop:** Supports direct UI input for ZIP, RAR, and 7Z archives.
-* **Auto-Slotting Logic:** Installs to the next available directory slot (`mod1/`, `mod2/`, etc.) to prevent filename conflicts.
-* **Source Agnostic:** Compatible with archives from Nexus, Paradox Mods, or external repositories.
+* **In-Memory ZIP Descriptor Auto-Detection:** Automatically extracts and parses `descriptor.mod` from dropped or selected mod ZIPs to auto-populate mod name, version, supported CK3 version, tags, and Steam ID.
+* **Paradox Clausewitz Script Engine:** Built-in Clausewitz parser and serializer generating authentic Paradox `.mod` descriptor files.
+* **Installed Mods Dashboard:** Browse, search, and manage installed mods; check target folder validity; and open mod directories directly in File Explorer.
+* **Mod Conflict Checker:** Scans installed mods for file collisions and highlights overlapping file overrides across mods.
+* **Steam Quick Launch:** One-click shortcut to launch Crusader Kings III directly via Steam (`steam://run/1158310`).
+* **Multi-Platform Path Auto-Discovery:** Seamlessly discovers CK3 mod directories across Windows (including OneDrive redirected folders), macOS, and Linux / Steam Deck.
 * **Portable Deployment:** Operates as a single executable (EXE) on Windows. No system installation required.
 
 ---
 
 ## Stack
 
-* **Electron v40**
+* **Electron v41**
 * **Node.js v20+**
 * **yauzl-promise** (Advanced ZIP management)
 

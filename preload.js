@@ -6,12 +6,21 @@ contextBridge.exposeInMainWorld('app', {
   pickFolder: () => ipcRenderer.invoke('pick-folder'),
   autoDetectCK3ModsFolder: () => ipcRenderer.invoke('auto-detect-ck3-mods-folder'),
   
+  // 📦 Inspection & Harvesting
+  inspectZip: (zipPath) => ipcRenderer.invoke('inspect-zip', zipPath),
+  
   // 🚀 Installation
   install: (data) => ipcRenderer.invoke('install', data),
   
+  // 📚 Mod Loader & Management
+  listInstalledMods: (folderPath) => ipcRenderer.invoke('list-installed-mods', folderPath),
+  deleteMod: (data) => ipcRenderer.invoke('delete-mod', data),
+  openPath: (targetPath) => ipcRenderer.invoke('open-path-in-folder', targetPath),
+  launchGame: () => ipcRenderer.invoke('launch-game'),
+  checkConflicts: (folderPath) => ipcRenderer.invoke('check-conflicts', folderPath),
+  
   // 📡 Real-time Updates (Main -> Renderer)
   onInstallStatus: (callback) => {
-    // AGENT FIX: Purge existing listeners to prevent memory leaks and duplicate callbacks
     ipcRenderer.removeAllListeners('install-status');
     ipcRenderer.on('install-status', (event, data) => callback(data));
   },
@@ -20,7 +29,7 @@ contextBridge.exposeInMainWorld('app', {
     ipcRenderer.on('progress-update', (event, data) => callback(data));
   },
 
-  // 🎨 System Accent Color (Requested securely from Main)
+  // 🎨 System Accent Color
   getSystemAccent: () => ipcRenderer.invoke('get-system-accent'),
   onAccentChange: (callback) => {
     ipcRenderer.removeAllListeners('accent-color-changed');
