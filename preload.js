@@ -17,6 +17,11 @@ contextBridge.exposeInMainWorld('app', {
   deleteMod: (data) => ipcRenderer.invoke('delete-mod', data),
   openPath: (targetPath) => ipcRenderer.invoke('open-path-in-folder', targetPath),
   launchGame: () => ipcRenderer.invoke('launch-game'),
+  launchHeroicCK3: () => ipcRenderer.invoke('launch-heroic-ck3'),
+  onHeroicScanProgress: (callback) => {
+    ipcRenderer.removeAllListeners('heroic-scan-progress');
+    ipcRenderer.on('heroic-scan-progress', (event, data) => callback(data));
+  },
   checkConflicts: (folderPath) => ipcRenderer.invoke('check-conflicts', folderPath),
   
   // 📡 Real-time Updates (Main -> Renderer)

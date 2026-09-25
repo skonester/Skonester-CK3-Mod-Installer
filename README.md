@@ -1,55 +1,50 @@
-# Skonester CK3 Mod Loader & Installer
+# CK3 Mod Installer
 
-[![Downloads](https://img.shields.io/github/downloads/skonester/Skonester-CK3-Mod-Installer/total.svg)](https://github.com/skonester/Skonester-CK3-Mod-Installer/releases)
+Install and manage mod ZIP files for **Crusader Kings III 1.19**. This is version **1.20.1** of the installer. You need your own copy of CK3 and the mods you want to use.
 
-A universal, automated modification loader and installer for Crusader Kings III (Optimized for v1.20).
+## Get started
 
-[App Preview](https://htmlpreview.github.io/?https://github.com/skonester/Skonester-CK3-Mod-Installer/blob/main/index.html)
+1. Download the build for your system from [Releases](https://github.com/skonester/Skonester-CK3-Mod-Installer/releases) and open the app.
+2. Drag a CK3 mod ZIP into the window, or click **Choose ZIP Archive**.
+3. Check the mod name and other details. The app fills these in when the ZIP contains a `descriptor.mod` file; you can edit them before installing.
+4. Click **AUTO-DETECT** to find your CK3 **mods folder**. If that does not find it, click **BROWSE FOLDER** and choose the mods folder yourself. This is the folder for your mods, not the folder containing the CK3 game.
+5. Click **INSTALL & LOAD MOD**. If the mod does not appear in game, check that it is enabled in your CK3 playset.
 
----
+The app has an **Installed Mods** tab for viewing and removing mods and a **Conflicts** tab that shows files shared by multiple installed mods. A shared file is worth checking; it does not always mean the mods are incompatible.
 
-## Features
+## Launching CK3
 
-* **In-Memory ZIP Descriptor Auto-Detection:** Automatically extracts and parses `descriptor.mod` from dropped or selected mod ZIPs to auto-populate mod name, version, supported CK3 version, tags, and Steam ID.
-* **Paradox Clausewitz Script Engine:** Built-in Clausewitz parser and serializer generating authentic Paradox `.mod` descriptor files.
-* **Installed Mods Dashboard:** Browse, search, and manage installed mods; check target folder validity; and open mod directories directly in File Explorer.
-* **Mod Conflict Checker:** Scans installed mods for file collisions and highlights overlapping file overrides across mods.
-* **Steam Quick Launch:** One-click shortcut to launch Crusader Kings III directly via Steam (`steam://run/1158310`).
-* **Multi-Platform Path Auto-Discovery:** Seamlessly discovers CK3 mod directories across Windows (including OneDrive redirected folders), macOS, and Linux / Steam Deck.
-* **Portable Deployment:** Operates as a single executable (EXE) on Windows. No system installation required.
+The **Launch CK3 (Steam)** button opens CK3 through Steam if you use Steam.
 
----
+**Heroic is optional.** If you prefer Heroic, install [Heroic Games Launcher](https://heroicgameslauncher.com/) separately and click **Launch CK3 (Heroic)**. CK3 must already be installed and accessible on your computer. The installer looks for the game on Windows, Linux, or macOS, adds it to Heroic as an Added Game when needed, and asks Heroic to launch it. You do not need Steam installed to use this button. A full drive search can take a while; the app shows its progress.
 
-## Stack
+The Heroic button launches the CK3 game executable. To manage a playset, open the Paradox launcher separately if your setup uses it.
 
-* **Electron v41**
-* **Node.js v20+**
-* **yauzl-promise** (Advanced ZIP management)
+## Compatibility
 
----
+- **Game version:** Crusader Kings III 1.19. Individual mods also need to support the CK3 version you are playing.
+- **Systems:** Windows, Linux, and macOS. Download the build for your system from Releases.
+- **Mod format:** ZIP archives. The app can read mod details from a `descriptor.mod` file in the archive.
 
-## Local Development
+## Build from source
 
-To modify or build the application locally, ensure **Node.js v20+** is installed on the host machine.
+Players using a release download do not need Node.js. To run or build the source, install Node.js 20 or later, then:
 
 ```bash
-# Setup & Run
-git clone [https://github.com/skonester/Skonester-CK3-Mod-Installer.git](https://github.com/skonester/Skonester-CK3-Mod-Installer.git)
+git clone https://github.com/skonester/Skonester-CK3-Mod-Installer.git
 cd Skonester-CK3-Mod-Installer
 npm install
 npm start
+```
 
-# Compile Binaries
-npm run dist:win    # Windows
-npm run dist:linux  # Linux
-npm run dist:mac    # MacOS (Experimental)
+Build a package on the matching operating system:
 
+```bash
+npm run dist:win
+npm run dist:linux
+npm run dist:mac
+```
 
-Cloud Building (GitHub Actions)
-Actions are disabled by default on forks. To compile standalone binaries via the cloud:
+## License
 
-Enable Workflows: In your repository fork, navigate to the Actions tab and select "I understand my workflows, go ahead and enable them".
-
-Trigger the Build: Pushing to the main branch triggers an automatic build. To manually execute, navigate to Actions > Multi-Platform Build & Release > Run workflow.
-
-Download Artifacts: Once the build completes (green checkmark), click the specific run name, scroll to the Artifacts section, and download your target platform binary (e.g., build-windows-latest).
+CK3 Mod Installer is licensed under the [GNU General Public License version 3](LICENSE) (`GPL-3.0-only`). The project's earlier Boost Software License notice is retained in [NOTICE](NOTICE).

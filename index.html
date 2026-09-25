@@ -137,6 +137,12 @@ body.drag-active #drop-overlay .drop-box { transform: scale(1); box-shadow: 0 0 
     background: linear-gradient(135deg, rgba(28,55,95,0.9) 0%, rgba(25,115,185,0.8) 100%);
     box-shadow: 0 4px 16px rgba(40,120,220,0.3);
 }
+.heroic-status {
+    width: 100%; margin-top: 8px; font-size: 0.82rem;
+    color: var(--text-muted); text-align: left;
+}
+.heroic-status.error { color: #ff9999; }
+.heroic-status.success { color: #7be495; }
 
 /* Tab Navigation */
 .tab-nav {
@@ -382,10 +388,14 @@ body.drag-active #drop-overlay .drop-box { transform: scale(1); box-shadow: 0 0 
         <button id="launchGameBtn" class="quick-btn steam" title="Launch Crusader Kings III on Steam">
             <span>👑</span> Launch CK3 (Steam)
         </button>
+        <button id="launchHeroicBtn" class="quick-btn" title="Launch Crusader Kings III through Heroic">
+            Launch CK3 (Heroic)
+        </button>
         <button id="openModFolderBtn" class="quick-btn" title="Open CK3 mod folder in File Explorer">
             <span>📂</span> Open Mod Folder
         </button>
     </div>
+    <div id="heroicStatus" class="heroic-status titlebar-nodrag" role="status" hidden></div>
 </div>
 
 <!-- Tab Navigation -->
@@ -420,7 +430,7 @@ body.drag-active #drop-overlay .drop-box { transform: scale(1); box-shadow: 0 0 
             <input id="modVersion" class="input-field" placeholder="Mod Version (e.g. 1.14.0)" value="1.0">
         </div>
         <div class="grid-2">
-            <input id="supportedVersion" class="input-field" placeholder="Supported CK3 Version (e.g. 1.14.*)" value="1.14.*">
+            <input id="supportedVersion" class="input-field" placeholder="Supported CK3 Version (e.g. 1.19.*)" value="1.19.*">
             <input id="modTags" class="input-field" placeholder="Tags (comma separated, e.g. Historical, Fixes)" value="Historical">
         </div>
     </div>
@@ -686,6 +696,33 @@ $('folderBtn').onclick = async () => {
 };
 
 // QUICK ACTIONS
+window.app.onHeroicScanProgress(({ drive, directories, targetName }) => {
+    const status = $('heroicStatus');
+    status.hidden = false;
+    status.textContent = `Searching ${drive} for ${targetName || 'CK3'}… ${directories.toLocaleString()} folders checked`;
+});
+
+$('launchHeroicBtn').onclick = async () => {
+    const status = $('heroicStatus');
+    const button = $('launchHeroicBtn');
+    button.disabled = true;
+    status.hidden = false;
+    status.className = 'heroic-status titlebar-nodrag';
+    status.textContent = 'Checking Heroic and locating CK3…';
+    try {
+        const result = await window.app.launchHeroicCK3();
+        status.classList.add(result.success ? 'success' : 'error');
+        status.textContent = result.success
+            ? `CK3 launch request sent to Heroic: ${result.executable}`
+            : result.error;
+    } catch (e) {
+        status.classList.add('error');
+        status.textContent = `Could not contact Heroic: ${e.message}`;
+    } finally {
+        button.disabled = false;
+    }
+};
+
 $('launchGameBtn').onclick = async () => {
     try {
         await window.app.launchGame();

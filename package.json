@@ -1,7 +1,7 @@
 {
   "name": "skonester-ck3-mod-installer",
-  "version": "1.20.0",
-  "description": "Universal CK3 Mod Installer - mod1, mod2, mod3 auto-slotting",
+  "version": "1.20.1",
+  "description": "Crusader Kings III 1.19 mod ZIP installer and manager",
   "main": "main.js",
   "repository": {
     "type": "git",
@@ -10,6 +10,7 @@
   "scripts": {
     "start": "electron .",
     "dev": "electron . --enable-logging",
+    "test": "node --test",
     "dist:win": "electron-builder --win portable",
     "dist:mac": "electron-builder --mac dmg",
     "dist:linux": "electron-builder --linux AppImage",
@@ -31,6 +32,7 @@
       "output": "dist"
     },
     "win": {
+      "signAndEditExecutable": false,
       "target": [
         {
           "target": "portable",
@@ -59,5 +61,6 @@
       "category": "Utility"
     },
     "compression": "maximum"
-  }
+  },
+  "license": "GPL-3.0-only"
 }

@@ -6,6 +6,7 @@ const os = require('os');
 const yauzl = require('yauzl-promise');
 const { pipeline } = require('stream/promises');
 const { parseClausewitz, serializeClausewitz, inspectZipDescriptor } = require('./clausewitz');
+const { prepareHeroicCK3 } = require('./heroic');
 
 let mainWin;
 
@@ -278,6 +279,28 @@ ipcMain.handle('launch-game', async function() {
   } catch (err) {
     console.error('Failed to launch game:', err);
     return { success: false, error: err.message };
+  }
+});
+
+let heroicLaunchInProgress = false;
+ipcMain.handle('launch-heroic-ck3', async function(event) {
+  if (heroicLaunchInProgress) return { success: false, error: 'CK3 discovery is already running.' };
+  heroicLaunchInProgress = true;
+  try {
+    const { url, executable } = await prepareHeroicCK3({
+      onProgress: ({ drive, directories, targetName }) => {
+        if (!event.sender.isDestroyed()) {
+          event.sender.send('heroic-scan-progress', { drive, directories, targetName });
+        }
+      }
+    });
+    await shell.openExternal(url);
+    return { success: true, executable };
+  } catch (err) {
+    console.error('Failed to launch CK3 via Heroic:', err);
+    return { success: false, error: err.message };
+  } finally {
+    heroicLaunchInProgress = false;
   }
 });
 
