@@ -487,7 +487,7 @@ ipcMain.handle('install', async function(event, data) {
     const modFilename = `${modFolderName}.mod`;
     const modName = data.modName || 'Custom Mod';
     const modVersion = data.version || '1.0';
-    const supportedVersion = data.supportedVersion || `${modVersion}.*`;
+    const supportedVersion = data.supportedVersion?.trim() || '1.20.*';
     const remoteFileId = data.modId ? String(data.modId) : '0';
     const tagsList = Array.isArray(data.tags) && data.tags.length > 0 
       ? data.tags 

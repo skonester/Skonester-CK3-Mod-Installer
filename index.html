@@ -436,7 +436,7 @@ body.drag-active #drop-overlay .drop-box { transform: scale(1); box-shadow: 0 0 
             <input id="modVersion" class="input-field" placeholder="Mod Version (e.g. 1.14.0)" value="1.0">
         </div>
         <div class="grid-2">
-            <input id="supportedVersion" class="input-field" placeholder="Supported CK3 Version (e.g. 1.19.*)" value="1.19.*">
+            <input id="supportedVersion" class="input-field" placeholder="Supported CK3 Version (e.g. 1.20.*)" value="1.20.*">
             <input id="modTags" class="input-field" placeholder="Tags (comma separated, e.g. Historical, Fixes)" value="Historical">
         </div>
     </div>
@@ -569,7 +569,7 @@ function updatePreview() {
     const name = $('modName').value || 'Mod Name';
     const id = $('modId').value || '0';
     const ver = $('modVersion').value || '1.0';
-    const supVer = $('supportedVersion').value || `${ver}.*`;
+    const supVer = $('supportedVersion').value.trim() || '1.20.*';
     const tags = $('modTags').value.split(',').map(t => t.trim()).filter(Boolean);
 
     $('previewFilename').textContent = `${(name.toLowerCase().replace(/[^a-z0-9_-]/g, '_').slice(0, 24) || 'mod')}.mod`;

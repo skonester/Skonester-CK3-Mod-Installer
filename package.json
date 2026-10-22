@@ -1,7 +1,7 @@
 {
   "name": "skonester-ck3-mod-installer",
   "version": "1.20.2",
-  "description": "Crusader Kings III 1.19 mod ZIP installer and manager",
+  "description": "Crusader Kings III 1.20 mod ZIP installer and manager",
   "main": "main.js",
   "repository": {
     "type": "git",
