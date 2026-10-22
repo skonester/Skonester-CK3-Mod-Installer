@@ -1,6 +1,6 @@
 # CK3 Mod Installer
 
-Install and manage mod ZIP files for **Crusader Kings III 1.19**. This is version **1.20.1** of the installer. You need your own copy of CK3 and the mods you want to use.
+Install and manage mod ZIP files for **Crusader Kings III 1.19**. This is version **1.20.2** of the installer. You need your own copy of CK3 and the mods you want to use.
 
 [▶ Open the live app preview](https://htmlpreview.github.io/?https://github.com/skonester/Skonester-CK3-Mod-Installer/blob/main/index.html)
 

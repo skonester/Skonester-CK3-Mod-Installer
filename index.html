@@ -4,7 +4,13 @@
 <meta charset="UTF-8">
 <title>Skonester CK3 Mod Loader & Installer</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@font-face {
+    font-family: 'Inter';
+    src: url('./assets/fonts/InterVariable.woff2') format('woff2');
+    font-style: normal;
+    font-weight: 100 900;
+    font-display: swap;
+}
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -521,25 +527,25 @@ function switchTab(tabId, btn) {
     }
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
-    document.body.style.opacity = '0';
-    document.body.style.transform = 'translateY(12px)';
-    document.body.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
-    setTimeout(() => { 
-        document.body.style.opacity = '1'; 
-        document.body.style.transform = 'translateY(0)'; 
-    }, 50);
-
-    // Initial folder auto-detection
-    await triggerAutoDetect(true);
+document.addEventListener('DOMContentLoaded', () => {
     updatePreview();
-    checkReady();
 
-    // Check accent color
-    try {
-        const accent = await window.app.getSystemAccent();
+    // Apply the accent independently of folder discovery.
+    window.app.getSystemAccent().then(accent => {
         if (accent) applyAccentColor(accent);
-    } catch {}
+    }).catch(() => {});
+
+    // Let the first screen paint before discovering folders and listing mods.
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            requestIdleCallback(async () => {
+                if (folderPath) return;
+                await triggerAutoDetect(true);
+                updateStatus();
+                checkReady();
+            }, { timeout: 1000 });
+        });
+    });
 });
 
 function applyAccentColor(hex) {
@@ -658,6 +664,8 @@ const triggerAutoDetect = async (silent = false) => {
     if (!silent) setHTML('status', '🔍 Searching for Crusader Kings III mod folder...');
     try {
         const detectedPath = await window.app.autoDetectCK3ModsFolder();
+        // Preserve a folder chosen while background discovery was running.
+        if (silent && folderPath) return;
         if (detectedPath) {
             folderPath = detectedPath;
             $('folderPathDisplay').textContent = folderPath;

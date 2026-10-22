@@ -1,6 +1,6 @@
 {
   "name": "skonester-ck3-mod-installer",
-  "version": "1.20.1",
+  "version": "1.20.2",
   "description": "Crusader Kings III 1.19 mod ZIP installer and manager",
   "main": "main.js",
   "repository": {
@@ -32,7 +32,7 @@
       "output": "dist"
     },
     "win": {
-      "signAndEditExecutable": false,
+      "signAndEditExecutable": true,
       "target": [
         {
           "target": "portable",
