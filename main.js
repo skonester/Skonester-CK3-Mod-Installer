@@ -1,41 +1,29 @@
-const { app, BrowserWindow, ipcMain, systemPreferences, dialog, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const fs = require('fs');
 const fsPromises = require('fs').promises;
 const path = require('path');
 const os = require('os');
-const yauzl = require('yauzl-promise');
-const { pipeline } = require('stream/promises');
-const { parseClausewitz, serializeClausewitz, inspectZipDescriptor } = require('./clausewitz');
+const { parseClausewitz, inspectZipDescriptor } = require('./clausewitz');
 const { prepareHeroicCK3 } = require('./heroic');
+const { installMod } = require('./install-mod');
 
 let mainWin;
 
 app.whenReady().then(function() {
   mainWin = new BrowserWindow({
-    width: 780,
-    height: 980,
+    width: 1150,
+    height: 790,
+    minWidth: 640,
+    minHeight: 520,
     frame: false,
-    transparent: true,
-    backgroundColor: '#00000000',
-    titleBarStyle: 'hiddenInset',
+    backgroundColor: '#f8f5f1',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true
     }
   });
   
-  if (process.platform === 'win32') {
-    try {
-      const accentColor = systemPreferences.getAccentColor();
-      if (accentColor && typeof mainWin.setAccentColor === 'function') {
-        mainWin.setAccentColor(accentColor);
-      }
-    } catch (err) {
-      console.log('Accent color not supported:', err.message);
-    }
-  }
-  
-  mainWin.loadFile('index.html');
+  mainWin.loadFile(path.join(__dirname, 'index.html'));
 });
 
 ipcMain.handle('window-minimize', () => mainWin.minimize());
@@ -45,28 +33,8 @@ ipcMain.handle('window-maximize', () => {
 });
 ipcMain.handle('window-close', () => mainWin.close());
 
-// 🎨 SECURE ACCENT COLOR HANDLERS
-ipcMain.handle('get-system-accent', () => {
-  if (process.platform === 'win32' || process.platform === 'darwin') {
-    try {
-      return systemPreferences.getAccentColor();
-    } catch (e) {
-      return null;
-    }
-  }
-  return null;
-});
-
-if (process.platform === 'win32' || process.platform === 'darwin') {
-  systemPreferences.on('accent-color-changed', (event, newColor) => {
-    if (mainWin && !mainWin.isDestroyed()) {
-      mainWin.webContents.send('accent-color-changed', newColor);
-    }
-  });
-}
-
 ipcMain.handle('pick-zip', async function() {
-  var result = await dialog.showOpenDialog({
+  const result = await dialog.showOpenDialog(mainWin, {
     properties: ['openFile'],
     filters: [{name: 'CK3 Mod Archive', extensions: ['zip']}]
   });
@@ -74,7 +42,7 @@ ipcMain.handle('pick-zip', async function() {
 });
 
 ipcMain.handle('pick-folder', async function() {
-  var result = await dialog.showOpenDialog({
+  const result = await dialog.showOpenDialog(mainWin, {
     properties: ['openDirectory']
   });
   return result.filePaths[0] || null;
@@ -89,6 +57,7 @@ ipcMain.handle('auto-detect-ck3-mods-folder', async function() {
 
     if (process.platform === 'win32') {
       candidates.push(
+        path.join(app.getPath('documents'), 'Paradox Interactive', 'Crusader Kings III', 'mod'),
         path.join(home, 'Documents', 'Paradox Interactive', 'Crusader Kings III', 'mod'),
         path.join(home, 'OneDrive', 'Documents', 'Paradox Interactive', 'Crusader Kings III', 'mod'),
         path.join(home, 'OneDrive', 'Dokumente', 'Paradox Interactive', 'Crusader Kings III', 'mod'),
@@ -383,241 +352,15 @@ ipcMain.handle('check-conflicts', async function(event, folderPath) {
   }
 });
 
-// 🎯 YAUZL-PROMISE + PARADOX CLAUSEWITZ SERIALIZATION + REAL-TIME STREAMING
 ipcMain.handle('install', async function(event, data) {
-  let zip;
+  const sendProgress = progress => {
+    if (!event.sender.isDestroyed()) event.sender.send('progress-update', progress);
+  };
   try {
-    console.log('🚀 Install started:', data.zipPath);
-    mainWin.webContents.send('install-status', { status: 'detecting', message: 'Analyzing ZIP...' });
-
-    // 1. Open ZIP using yauzl
-    zip = await yauzl.open(data.zipPath, { supportMacArchive: true });
-    
-    // Get all entries for metadata and filtering
-    const entries = await zip.readEntries();
-    const leafFiles = entries.filter(e => !e.filename.endsWith('/'));
-    const totalFiles = leafFiles.length;
-    const totalSize = leafFiles.reduce((sum, e) => sum + Number(e.uncompressedSize), 0);
-    const totalSizeMB = Math.round(totalSize / 1024 / 1024);
-
-    console.log(`ZIP: ${totalFiles} files, ${totalSizeMB}MB`);
-    mainWin.webContents.send('install-status', { 
-      status: 'ready', 
-      totalFiles, 
-      totalSize: totalSizeMB,
-      message: `Ready: ${totalFiles} files, ${totalSizeMB}MB` 
-    });
-
-    // 🔧 ZIP root detection
-    let rootFolderName = null;
-    const firstFolders = [...new Set(leafFiles.map(e => e.filename.split('/')[0].trim()).filter(Boolean))];
-    
-    // Check if the zip already packages files under a single folder
-    let stripPrefix = '';
-    if (firstFolders.length === 1 && firstFolders[0]) {
-      // If all files are inside a top-level directory e.g. "my_mod/common/..."
-      rootFolderName = firstFolders[0];
-    }
-
-    let modFolderName;
-    
-    // Phase 1: ZIP root check
-    if (rootFolderName) {
-      const targetDir = path.join(data.folderPath, rootFolderName);
-      try {
-        const stat = await fsPromises.stat(targetDir);
-        if (stat.isDirectory()) {
-          console.log('Root folder already exists, generating unique slot');
-        } else {
-          modFolderName = rootFolderName;
-        }
-      } catch {
-        modFolderName = rootFolderName;
-      }
-    }
-
-    // Phase 2: modN increment if needed or sanitize modName
-    if (!modFolderName) {
-      let candidate = (data.modName || 'mod')
-        .toLowerCase()
-        .replace(/[^a-z0-9_-]/g, '_')
-        .replace(/_+/g, '_')
-        .slice(0, 32);
-
-      if (candidate && candidate !== 'mod') {
-        const targetDir = path.join(data.folderPath, candidate);
-        const exists = await fsPromises.stat(targetDir).then(() => true).catch(() => false);
-        if (!exists) {
-          modFolderName = candidate;
-        }
-      }
-
-      if (!modFolderName) {
-        let modNumber = 1;
-        while (true) {
-          modFolderName = `mod${modNumber}`;
-          const targetDir = path.join(data.folderPath, modFolderName);
-          try {
-            const stat = await fsPromises.stat(targetDir);
-            if (stat.isDirectory()) {
-              modNumber++;
-              continue;
-            }
-            break;
-          } catch {
-            break;
-          }
-        }
-      }
-    }
-
-    console.log('🎯 Destination folder:', modFolderName);
-
-    // 📝 Create .mod files using Clausewitz serialization
-    mainWin.webContents.send('progress-update', {
-      percent: 10,
-      size: '0MB',
-      speed: '0MB/s',
-      eta: '0s',
-      files: '0 / ' + totalFiles,
-      status: 'preparing',
-      message: `Creating ${modFolderName}.mod + descriptor.mod`
-    });
-
-    const modFilename = `${modFolderName}.mod`;
-    const modName = data.modName || 'Custom Mod';
-    const modVersion = data.version || '1.0';
-    const supportedVersion = data.supportedVersion?.trim() || '1.20.*';
-    const remoteFileId = data.modId ? String(data.modId) : '0';
-    const tagsList = Array.isArray(data.tags) && data.tags.length > 0 
-      ? data.tags 
-      : ['Historical', 'Utilities'];
-    
-    // External .mod descriptor (placed directly in mod/)
-    const externalModData = {
-      name: modName,
-      path: `mod/${modFolderName}`,
-      remote_file_id: remoteFileId,
-      version: modVersion,
-      supported_version: supportedVersion,
-      tags: tagsList
-    };
-    if (data.picture) externalModData.picture = data.picture;
-
-    await fsPromises.writeFile(
-      path.join(data.folderPath, modFilename),
-      serializeClausewitz(externalModData),
-      'utf8'
-    );
-
-    const targetDir = path.join(data.folderPath, modFolderName);
-    await fsPromises.mkdir(targetDir, { recursive: true });
-    
-    // Internal descriptor.mod (placed inside mod folder)
-    const internalDescriptorData = {
-      name: modName,
-      version: modVersion,
-      supported_version: supportedVersion,
-      tags: tagsList,
-      remote_file_id: remoteFileId
-    };
-    if (data.picture) internalDescriptorData.picture = data.picture;
-
-    await fsPromises.writeFile(
-      path.join(targetDir, 'descriptor.mod'),
-      serializeClausewitz(internalDescriptorData),
-      'utf8'
-    );
-
-    mainWin.webContents.send('progress-update', {
-      percent: 20,
-      size: `${totalSizeMB}MB`,
-      speed: '0MB/s',
-      eta: 'calculating...',
-      files: '0 / ' + totalFiles,
-      status: 'extracting',
-      message: `Extracting ${totalFiles} files to ${modFolderName}/`
-    });
-
-    // Determine if we should strip root folder prefix
-    const shouldStripRoot = rootFolderName && entries.every(e => e.filename.startsWith(rootFolderName + '/'));
-
-    // 🔥 REAL-TIME EXTRACTION WITH PROGRESS
-    const startTime = Date.now();
-    let extractedCount = 0;
-    let extractedSize = 0;
-
-    for (const entry of entries) {
-      let relativeFilename = entry.filename;
-      if (shouldStripRoot) {
-        relativeFilename = entry.filename.slice(rootFolderName.length + 1);
-      }
-      if (!relativeFilename) continue;
-
-      // Prevent zip-slip vulnerability
-      const safePath = path.normalize(relativeFilename).replace(/^(\.\.[\/\\])+/, '');
-      const targetPath = path.join(targetDir, safePath);
-
-      if (entry.filename.endsWith('/')) {
-        await fsPromises.mkdir(targetPath, { recursive: true });
-      } else {
-        await fsPromises.mkdir(path.dirname(targetPath), { recursive: true });
-        
-        const readStream = await entry.openReadStream();
-        const writeStream = fs.createWriteStream(targetPath);
-        
-        await pipeline(readStream, writeStream);
-
-        extractedCount++;
-        extractedSize += Number(entry.uncompressedSize);
-
-        const elapsed = Date.now() - startTime;
-        const percent = Math.round((extractedCount / totalFiles) * 80) + 20; 
-        const currentSizeMB = Math.round(extractedSize / 1024 / 1024);
-        const avgSpeed = elapsed > 0 ? (currentSizeMB / (elapsed / 1000)).toFixed(1) : '0.0';
-        
-        const bytesPerMs = elapsed > 0 ? extractedSize / elapsed : 0;
-        const remainingBytes = totalSize - extractedSize;
-        const etaMs = bytesPerMs > 0 ? remainingBytes / bytesPerMs : 0;
-
-        mainWin.webContents.send('progress-update', {
-          percent,
-          size: `${currentSizeMB}MB / ${totalSizeMB}MB`,
-          speed: `${avgSpeed}MB/s`,
-          eta: `${Math.round(etaMs / 1000)}s`,
-          files: `${extractedCount} / ${totalFiles}`,
-          status: 'extracting',
-          message: `Writing ${path.basename(targetPath)}`
-        });
-      }
-    }
-
-    // Final cleanup
-    mainWin.webContents.send('progress-update', {
-      percent: 100,
-      size: `${totalSizeMB}MB / ${totalSizeMB}MB`,
-      speed: 'Done',
-      eta: '0s',
-      files: `${totalFiles} / ${totalFiles}`,
-      status: 'complete',
-      message: `✅ ${modFolderName}/ ready!`
-    });
-
-    return {
-      success: true,
-      message: `🎉 ${modFolderName}/ + ${totalFiles} files extracted`,
-      details: `${modName} v${modVersion} → ${modFolderName}`
-    };
-
-  } catch (err) {
-    mainWin.webContents.send('progress-update', {
-      percent: 0,
-      status: 'error',
-      message: `❌ ${err.message}`
-    });
-    console.error('Install failed:', err);
-    return { success: false, error: err.message };
-  } finally {
-    if (zip) await zip.close();
+    return await installMod(data, sendProgress);
+  } catch (error) {
+    sendProgress({ percent: 0, message: 'Installation stopped.' });
+    console.error('Install failed:', error);
+    return { success: false, error: error.message };
   }
 });

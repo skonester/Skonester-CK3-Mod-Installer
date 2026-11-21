@@ -204,40 +204,18 @@ async function inspectZipDescriptor(zipPath) {
     zip = await yauzl.open(zipPath, { supportMacArchive: true });
     const entries = await zip.readEntries();
 
-    let descriptorEntry = null;
-    let fallbackModEntry = null;
     let thumbnailEntry = null;
 
     for (const entry of entries) {
       if (entry.filename.endsWith('/')) continue;
       const baseName = entry.filename.split('/').pop().toLowerCase();
 
-      if (baseName === 'descriptor.mod') {
-        if (!descriptorEntry || entry.filename.split('/').length < descriptorEntry.filename.split('/').length) {
-          descriptorEntry = entry;
-        }
-      } else if (baseName.endsWith('.mod') && !fallbackModEntry) {
-        fallbackModEntry = entry;
-      }
-
       if (/\.(png|jpg|jpeg)$/i.test(baseName) && (baseName.includes('thumb') || baseName.includes('picture') || baseName === 'thumbnail.png')) {
         thumbnailEntry = entry;
       }
     }
 
-    const chosenEntry = descriptorEntry || fallbackModEntry;
-    let parsed = null;
-    let rawText = '';
-
-    if (chosenEntry) {
-      const stream = await chosenEntry.openReadStream();
-      const chunks = [];
-      for await (const chunk of stream) {
-        chunks.push(chunk);
-      }
-      rawText = Buffer.concat(chunks).toString('utf8');
-      parsed = parseClausewitz(rawText);
-    }
+    const { entry: chosenEntry, parsed, rawText } = await readArchiveDescriptor(entries);
 
     const nonDirEntries = entries.filter(e => !e.filename.endsWith('/'));
     const firstFolders = [...new Set(nonDirEntries.map(e => e.filename.split('/')[0]).filter(Boolean))];
@@ -268,9 +246,35 @@ async function inspectZipDescriptor(zipPath) {
   }
 }
 
+async function readArchiveDescriptor(entries) {
+  let descriptor;
+  let fallback;
+  for (const entry of entries) {
+    const parts = entry.filename.toLowerCase().split('/');
+    const name = parts.at(-1);
+    if (name === 'descriptor.mod') {
+      if (!descriptor || parts.length < descriptor.filename.split('/').length) {
+        descriptor = entry;
+      }
+    } else if (!fallback && name.endsWith('.mod')) {
+      fallback = entry;
+    }
+  }
+
+  const entry = descriptor || fallback;
+  const chunks = [];
+  if (entry) {
+    const stream = await entry.openReadStream();
+    for await (const chunk of stream) chunks.push(chunk);
+  }
+  const rawText = Buffer.concat(chunks).toString('utf8');
+  return { entry, rawText, parsed: parseClausewitz(rawText) };
+}
+
 module.exports = {
   tokenizeClausewitz,
   parseClausewitz,
   serializeClausewitz,
-  inspectZipDescriptor
+  inspectZipDescriptor,
+  readArchiveDescriptor
 };

@@ -1,30 +1,32 @@
 # CK3 Mod Installer
 
-Install and manage mod ZIP files for **Crusader Kings III 1.20**. This is version **1.20.2** of the installer. You need your own copy of CK3 and the mods you want to use.
+[![Downloads](https://img.shields.io/github/downloads/skonester/Skonester-CK3-Mod-Installer/total.svg)](https://github.com/skonester/Skonester-CK3-Mod-Installer/releases)
 
-[▶ Open the live app preview](https://htmlpreview.github.io/?https://github.com/skonester/Skonester-CK3-Mod-Installer/blob/main/index.html)
+Install and manage mod ZIP files for **Crusader Kings III 1.21 (Florin)**. This is version **1.21.0** of the installer. You need your own copy of CK3 and the mods you want to use.
+
+To preview the interface from a local checkout, open `index.html` in your browser.
 
 ## Get started
 
 1. Download the build for your system from [Releases](https://github.com/skonester/Skonester-CK3-Mod-Installer/releases) and open the app.
-2. Drag a CK3 mod ZIP into the window, or click **Choose ZIP Archive**.
-3. Check the mod name and other details. The app fills these in when the ZIP contains a `descriptor.mod` file; you can edit them before installing.
-4. Click **AUTO-DETECT** to find your CK3 **mods folder**. If that does not find it, click **BROWSE FOLDER** and choose the mods folder yourself. This is the folder for your mods, not the folder containing the CK3 game.
-5. Click **INSTALL & LOAD MOD**. If the mod does not appear in game, check that it is enabled in your CK3 playset.
+2. Drag a CK3 mod ZIP into the window, or click **Choose ZIP**.
+3. Review the mod details. The app reads them from the archive's descriptor and uses `1.21.*` when the descriptor has no supported version. You can edit the details before installing.
+4. Check **Install location**. Use **Auto-detect** to find your CK3 mods folder or **Browse folder** to select it.
+5. Click **Install mod**, then enable the installed mod in your Paradox Launcher playset.
 
 The app has an **Installed Mods** tab for viewing and removing mods and a **Conflicts** tab that shows files shared by multiple installed mods. A shared file is worth checking; it does not always mean the mods are incompatible.
 
 ## Launching CK3
 
-The **Launch CK3 (Steam)** button opens CK3 through Steam if you use Steam.
+The **Launch via Steam** button opens CK3 through Steam if you use Steam.
 
-**Heroic is optional.** If you prefer Heroic, install [Heroic Games Launcher](https://heroicgameslauncher.com/) separately and click **Launch CK3 (Heroic)**. CK3 must already be installed and accessible on your computer. The installer looks for the game on Windows, Linux, or macOS, adds it to Heroic as an Added Game when needed, and asks Heroic to launch it. You do not need Steam installed to use this button. A full drive search can take a while; the app shows its progress.
+**Heroic is optional.** If you prefer Heroic, install [Heroic Games Launcher](https://heroicgameslauncher.com/) separately and click **Launch via Heroic**. CK3 must already be installed and accessible on your computer. The installer looks for the game on Windows, Linux, or macOS, adds it to Heroic as an Added Game when needed, and asks Heroic to launch it. You do not need Steam installed to use this button. A full drive search can take a while and the app shows its progress.
 
 The Heroic button launches the CK3 game executable. To manage a playset, open the Paradox launcher separately if your setup uses it.
 
 ## Compatibility
 
-- **Game version:** Crusader Kings III 1.20. Individual mods also need to support the CK3 version you are playing.
+- **Game version:** Crusader Kings III 1.21 (Florin). Individual mods also need to support the CK3 version you are playing.
 - **Systems:** Windows, Linux, and macOS. Download the build for your system from Releases.
 - **Mod format:** ZIP archives. The app can read mod details from a `descriptor.mod` file in the archive.
 
