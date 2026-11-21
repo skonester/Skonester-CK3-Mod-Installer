@@ -4,7 +4,7 @@
 
 Install and manage mod ZIP files for **Crusader Kings III 1.21 (Florin)**. This is version **1.21.0** of the installer. You need your own copy of CK3 and the mods you want to use.
 
-To preview the interface from a local checkout, open `index.html` in your browser.
+[▶ Open the live app preview](https://htmlpreview.github.io/?https://github.com/skonester/Skonester-CK3-Mod-Installer/blob/main/index.html)
 
 ## Get started
 
